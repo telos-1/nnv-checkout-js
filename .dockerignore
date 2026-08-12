@@ -1,0 +1,30 @@
+# The build stage creates its own throwaway repo; the real one is ~900MB.
+.git
+.github
+.circleci
+
+node_modules
+**/node_modules
+.nx
+
+# Rebuilt inside the image.
+dist
+build
+packages/**/generated
+*.tsbuildinfo
+
+coverage
+test-results
+junit.xml
+__temp__
+packages/test-framework/report
+packages/test-framework/screenshots
+packages/test-framework/videos
+
+.env
+.idea
+.vscode
+.DS_Store
+
+Dockerfile
+.dockerignore

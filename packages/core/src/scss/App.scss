@@ -21,6 +21,17 @@
 @import "../../../../node_modules/@bigcommerce/citadel/dist/tools/toolkit"; // 1
 @import "../../../../node_modules/react-datepicker/dist/react-datepicker";
 
+// Brand tokens
+// -----------------------------------------------------------------------------
+//
+// Nuggets Night Vision brand values. Imported here — before any settings are
+// declared — so every later layer, including the enhanced theme, can reference
+// them. Declarations only; it emits no CSS.
+//
+// -----------------------------------------------------------------------------
+
+@import "brand/tokens";
+
 // Settings
 // -----------------------------------------------------------------------------
 //
@@ -35,6 +46,11 @@
 // global app defined settings must be set first
 @import "settings/global/global"; // 1
 
+// Brand palette must sit between the app's own globals (which declare the
+// colour, container and font variables) and Citadel's globals (which freeze
+// them into $colorMap / $containersMap / $fontFamilyMap).
+@import "settings/brand/palette";
+
 @import "../../../../node_modules/@bigcommerce/citadel/dist/settings/global/global"; // 2
 @import "../../../../node_modules/@bigcommerce/citadel/dist/settings/normalize/normalize"; // 2
 @import "../../../../node_modules/@bigcommerce/citadel/dist/settings/foundation/foundation"; // 2
@@ -47,6 +63,11 @@
 @import "settings/utilities/utilities"; // 4
 @import "settings/bigcommerce/bigcommerce"; // 4
 @import "settings/checkout/checkout"; // 4
+
+// Brand component tokens must follow every upstream settings file (so it can
+// override them and call Citadel's helpers) and precede the components below,
+// which are what actually consume them.
+@import "settings/brand/tokens";
 
 // Utilities
 // -----------------------------------------------------------------------------
@@ -80,3 +101,12 @@
 // =============================================================================
 
 @import "enhancedThemeV1/enhancedThemeV1";
+
+// =============================================================================
+// BRAND (NUGGETS NIGHT VISION)
+// =============================================================================
+//
+// Last, so it settles the cascade against both the upstream components and the
+// enhanced theme above.
+
+@import "brand/brand";

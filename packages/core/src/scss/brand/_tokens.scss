@@ -1,0 +1,119 @@
+// =============================================================================
+// NUGGETS NIGHT VISION — BRAND TOKENS
+// =============================================================================
+//
+// Purpose: the single source of truth for the Nuggets Night Vision look. Every
+// other brand file maps these tokens onto Citadel/Foundation variables — nothing
+// else in the checkout should hard-code a brand colour.
+//
+// Values are taken from the live storefront (nuggetsnightvision.com): a pure
+// black canvas, a single high-voltage green accent, and Montserrat/Open Sans.
+//
+// This file is imported before any settings are consumed, so it must contain
+// variable declarations only — no rules, and no calls to Citadel's `color()` /
+// `spacing()` helpers, which are not defined yet at this point.
+//
+// -----------------------------------------------------------------------------
+
+// Accent
+// -----------------------------------------------------------------------------
+//
+// $nnv-green is the storefront's accent, used for CTAs, links, focus rings and
+// selection pips. It is very light (relative luminance ~0.8), so anything
+// sitting *on* it must use $nnv-textOnAccent (black), never white.
+//
+// -----------------------------------------------------------------------------
+
+$nnv-green:                 #02fe02;
+$nnv-greenBright:           #6bff6b; // hover text / lifted state
+$nnv-greenDark:             #00d400; // hover fill
+$nnv-greenDarker:           #00a800; // active fill
+$nnv-greenTint:             rgba(2, 254, 2, 0.08); // selected-row wash
+$nnv-greenGlow:             rgba(2, 254, 2, 0.25); // focus ring
+
+// Surfaces
+// -----------------------------------------------------------------------------
+//
+// A tight, low-contrast ramp. The gaps are deliberately small — on a pure black
+// canvas, large steps read as grey boxes rather than as depth.
+//
+// -----------------------------------------------------------------------------
+
+$nnv-black:                 #000; // page canvas
+$nnv-surface:               #0b0b0b; // panels, order summary, step cards
+$nnv-surfaceRaised:         #101010; // inputs, selects, modals
+$nnv-surfaceHover:          #171717; // hover / striped rows
+
+$nnv-border:                #232323; // decorative hairline — panels, dividers
+
+// Control boundaries: inputs, selects, checkboxes, secondary buttons.
+//
+// Deliberately lighter than the storefront's decorative hairlines. The input
+// surface sits only 1.09:1 from the canvas, so on a checkout the border *is*
+// the affordance that says "this is a field" — WCAG 1.4.11 asks for 3:1 on
+// exactly that. At #606060 it clears 3.03:1 against the field and 3.34:1
+// against the page; the subtler $nnv-border is kept for everything decorative.
+$nnv-borderStrong:          #606060;
+
+// Text
+// -----------------------------------------------------------------------------
+
+$nnv-textPrimary:           #fff; // headings
+$nnv-textBody:              #e6e6e6; // body copy
+$nnv-textMuted:             #9a9a9a; // labels, captions, help text
+
+// Placeholders, disabled copy and struck-through prices. Disabled text is
+// exempt from WCAG 1.4.3, but placeholders are not, so this is held at 4.8:1
+// against the field surface rather than dropped to a true "faint" grey.
+$nnv-textFaint:             #808080;
+$nnv-textOnAccent:          #000; // anything on top of $nnv-green
+
+// States
+// -----------------------------------------------------------------------------
+//
+// Each state has a foreground tuned for legibility on black plus a heavily
+// darkened surface used as the alert/banner fill.
+//
+// -----------------------------------------------------------------------------
+
+$nnv-error:                 #ff5f5f;
+$nnv-errorSurface:          #24100f;
+$nnv-errorSurfaceSubtle:    #1a0c0c;
+
+$nnv-success:               #3ff03f;
+$nnv-successSurface:        #082408;
+
+$nnv-warning:               #f5b544;
+$nnv-warningSurface:        #251c0c;
+
+$nnv-info:                  #9a9a9a;
+$nnv-infoSurface:           #131313;
+
+// Light plate
+// -----------------------------------------------------------------------------
+//
+// Reserved for third-party marks that ship light-background-only artwork and
+// may not be recoloured — currently just Google's Places attribution strip.
+// Nothing else in the checkout should use these.
+//
+// -----------------------------------------------------------------------------
+
+$nnv-lightPlate:            #f7f7f7;
+$nnv-lightPlateText:        #5f5f5f;
+
+// Type
+// -----------------------------------------------------------------------------
+
+$nnv-fontHeading:           ("Montserrat", "Helvetica Neue", Arial, sans-serif);
+$nnv-fontBody:              ("Open Sans", "Helvetica Neue", Arial, sans-serif);
+
+// Shape
+// -----------------------------------------------------------------------------
+//
+// The storefront's CTAs are effectively square. 2px keeps that hard-edged,
+// tactical feel without looking like an unstyled button.
+//
+// -----------------------------------------------------------------------------
+
+$nnv-radius:                2px;
+$nnv-buttonLetterSpacing:   0.06em;

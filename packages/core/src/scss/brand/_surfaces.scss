@@ -1,0 +1,237 @@
+// =============================================================================
+// NUGGETS NIGHT VISION — SURFACES
+// =============================================================================
+//
+// Purpose: the panelled regions — order summary, product list, coupons, modals,
+// alerts, payment widgets and loading chrome.
+//
+// -----------------------------------------------------------------------------
+
+// Order summary
+// -----------------------------------------------------------------------------
+//
+// Upstream leaves the summary transparent with a hairline. On black that reads
+// as nothing at all, so it is lifted onto the panel surface — matching the
+// storefront's card treatment.
+//
+// -----------------------------------------------------------------------------
+
+.cart,
+.cartDrawer {
+    background-color: $nnv-surface;
+    border-color: $nnv-border;
+}
+
+.cart-section {
+    border-top-color: $nnv-border;
+}
+
+.cart-title,
+.cart-priceItem-label {
+    color: $nnv-textBody;
+}
+
+.cart-priceItem-value {
+    color: $nnv-textPrimary;
+}
+
+.cart-priceItem-postFix,
+.cart-priceItem-before-value {
+    color: $nnv-textMuted;
+}
+
+// The order total is the one number the customer is looking for, so it takes
+// the accent — consistent with how the storefront prices products.
+.cart-priceItem--total .cart-priceItem-value,
+.cartDrawer-total .cart-priceItem-value {
+    color: $nnv-green;
+}
+
+.total-savings,
+.applied-discounts-list .cart-priceItem-label-info {
+    color: $nnv-green;
+}
+
+// Products
+// -----------------------------------------------------------------------------
+
+.product-title {
+    color: $nnv-textPrimary;
+}
+
+.product-description,
+.product-options,
+.line-item-options {
+    color: $nnv-textMuted;
+}
+
+.product-price--beforeDiscount {
+    color: $nnv-textFaint;
+}
+
+// Product thumbnails are supplied as photography on white. A dark plate behind
+// them keeps cut-out images from punching a bright hole in the summary.
+.product-figure img,
+.cartDrawer-imageWrapper img {
+    background-color: $nnv-surfaceRaised;
+    border-radius: $nnv-radius;
+}
+
+// Coupons
+// -----------------------------------------------------------------------------
+
+.applied-coupons-list ul,
+.coupon-tag-wrapper,
+.form-checklist-footer {
+    background-color: $nnv-surfaceRaised;
+    border-color: $nnv-border;
+    color: $nnv-textBody;
+}
+
+.applied-coupon-error-message {
+    color: $nnv-error;
+}
+
+// Modals
+// -----------------------------------------------------------------------------
+
+.modal,
+.modal-body,
+.cart-modal-body {
+    background-color: $nnv-surfaceRaised;
+    color: $nnv-textBody;
+}
+
+.modal-header,
+.cart-modal-header,
+.modal-footer {
+    background-color: $nnv-surface;
+    border-color: $nnv-border;
+}
+
+.modal-header-title,
+.cart-modal-title {
+    color: $nnv-textPrimary;
+    font-family: $nnv-fontHeading;
+}
+
+.cart-modal-close svg {
+    fill: $nnv-textMuted;
+}
+
+// Alerts
+// -----------------------------------------------------------------------------
+//
+// Fills come from the inverted `*Light` state tokens. Only the foreground is set
+// here, because upstream lets alert copy inherit body colour — which is correct
+// on white and too dim on these deep washes.
+//
+// -----------------------------------------------------------------------------
+
+.alertBox {
+    border: 1px solid transparent;
+    color: $nnv-textBody;
+}
+
+.alertBox--error {
+    border-color: rgba($nnv-error, 0.4);
+}
+
+.alertBox--success {
+    border-color: rgba($nnv-success, 0.4);
+}
+
+.alertBox--warning {
+    border-color: rgba($nnv-warning, 0.4);
+}
+
+.alertBox--info {
+    border-color: $nnv-border;
+}
+
+// Payment widgets and provider chrome
+// -----------------------------------------------------------------------------
+
+.widget,
+.widget-body,
+.widget-bodyCard,
+.spamProtection-panel,
+.noPaymentMethods-panel,
+.shippingOptions-panel,
+.checkout-address--static,
+.consignment-container {
+    background-color: $nnv-surface;
+    border-color: $nnv-border;
+    color: $nnv-textBody;
+}
+
+.paymentProviderHeader-name {
+    color: $nnv-textPrimary;
+}
+
+.paymentProviderHeader-subtitleContainer,
+.paymentProviderHeader-poDisabledMessage {
+    color: $nnv-textMuted;
+}
+
+// Card-brand and wallet marks are supplied as full-colour artwork on white
+// plates. They are left untouched rather than filtered — inverting or dimming a
+// payment brand mark misrepresents it.
+
+// Saved instruments
+// -----------------------------------------------------------------------------
+
+.instrumentSelect-dropdownMenu,
+.dropdown-menu {
+    background-color: $nnv-surfaceRaised;
+    border-color: $nnv-borderStrong;
+}
+
+.instrumentSelect-option,
+.dropdown-menu-item {
+    color: $nnv-textBody;
+
+    &:hover {
+        background-color: $nnv-surfaceHover;
+    }
+}
+
+.instrumentSelect-details--expired,
+.instrumentModal-instrumentExpiry--expired {
+    color: $nnv-error;
+}
+
+// Loading
+// -----------------------------------------------------------------------------
+
+.loadingOverlay {
+    background-color: rgba($nnv-black, 0.72);
+}
+
+.loadingNotification-label {
+    border: 1px solid $nnv-border;
+}
+
+// Skeletons shimmer between the two darkest surface tones so the placeholder
+// reads as "loading" without flashing a bright block on a dark page.
+.animated-grey-box,
+.checklist-skeleton,
+.address-form-skeleton,
+.shippingOptions-skeleton,
+.walletbuttons-skeleton,
+.checkout-page-skeleton,
+.order-confirmation-page-skeleton {
+    background-color: $nnv-surface;
+}
+
+// Order confirmation
+// -----------------------------------------------------------------------------
+
+.orderConfirmation {
+    background-color: $nnv-black;
+    color: $nnv-textBody;
+}
+
+.orderConfirmation-section {
+    border-color: $nnv-border;
+}

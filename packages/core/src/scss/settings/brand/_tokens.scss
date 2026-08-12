@@ -1,0 +1,172 @@
+// =============================================================================
+// NUGGETS NIGHT VISION — COMPONENT TOKENS
+// =============================================================================
+//
+// Purpose: the second half of the brand settings pass. `settings/brand/_palette`
+// inverts the global ramp, which correctly re-themes everything that treats
+// `whites.bright` as a *surface*. This file fixes the minority of tokens that
+// meant the opposite — "text drawn on top of a coloured fill" — plus the maps
+// that were already composed from the upstream values and would otherwise stay
+// stale.
+//
+// IMPORTANT — import position: after `settings/checkout/checkout` (so every
+// upstream token exists and Citadel's helper functions are callable) and before
+// `citadel/components/components` (which is what actually consumes them).
+// Citadel's Foundation vendor emits no classes here — `$include-html-classes`
+// is false — so it is not a consumer.
+//
+// -----------------------------------------------------------------------------
+
+// Buttons
+// -----------------------------------------------------------------------------
+//
+// `$buttonStyleMap` is rebuilt in full rather than patched: upstream composes it
+// from the `$buttonStyle-*` scalars at declaration time, so re-assigning the
+// scalars here would have no effect on the map Citadel reads.
+//
+// The storefront's CTA is a solid green block with black text, so `primary` and
+// `action` are deliberately identical — the checkout's "primary vs action"
+// split has no equivalent in the brand, and diverging them would invent a
+// button style the store does not have.
+//
+// -----------------------------------------------------------------------------
+
+$buttonStyleMap: (
+    default: (
+        color:                          $nnv-textBody,
+        colorHover:                     $nnv-textPrimary,
+        colorActive:                    $nnv-textPrimary,
+        backgroundColor:                $nnv-surface,
+        backgroundColorHover:           $nnv-surfaceHover,
+        backgroundColorActive:          $nnv-surfaceHover,
+        borderColor:                    $nnv-borderStrong,
+        borderColorHover:               $nnv-green,
+        borderColorActive:              $nnv-greenDark
+    ),
+    primary: (
+        color:                          $nnv-textOnAccent,
+        colorHover:                     $nnv-textOnAccent,
+        colorActive:                    $nnv-textOnAccent,
+        backgroundColor:                $nnv-green,
+        backgroundColorHover:           $nnv-greenDark,
+        backgroundColorActive:          $nnv-greenDarker,
+        borderColor:                    $nnv-green,
+        borderColorHover:               $nnv-greenDark,
+        borderColorActive:              $nnv-greenDarker
+    ),
+    // Ghost CTA — mirrors the storefront's outlined hero button.
+    tertiary: (
+        color:                          $nnv-green,
+        colorHover:                     $nnv-greenBright,
+        colorActive:                    $nnv-greenDark,
+        backgroundColor:                transparent,
+        backgroundColorHover:           $nnv-greenTint,
+        backgroundColorActive:          $nnv-greenTint,
+        borderColor:                    $nnv-borderStrong,
+        borderColorHover:               $nnv-green,
+        borderColorActive:              $nnv-greenDark
+    ),
+    action: (
+        color:                          $nnv-textOnAccent,
+        colorHover:                     $nnv-textOnAccent,
+        colorActive:                    $nnv-textOnAccent,
+        backgroundColor:                $nnv-green,
+        backgroundColorHover:           $nnv-greenDark,
+        backgroundColorActive:          $nnv-greenDarker,
+        borderColor:                    $nnv-green,
+        borderColorHover:               $nnv-greenDark,
+        borderColorActive:              $nnv-greenDarker
+    ),
+    disabled: (
+        color:                          $nnv-textFaint,
+        colorHover:                     $nnv-textFaint,
+        colorActive:                    $nnv-textFaint,
+        backgroundColor:                $nnv-surface,
+        backgroundColorHover:           $nnv-surface,
+        backgroundColorActive:          $nnv-surface,
+        borderColor:                    $nnv-border,
+        borderColorHover:               $nnv-border,
+        borderColorActive:              $nnv-border
+    )
+);
+
+$button-radius:                             $nnv-radius;
+$button-focus-boxShadow:                    0 0 0 2px $nnv-greenGlow;
+
+// Checkout step counter
+// -----------------------------------------------------------------------------
+//
+// The counter is a filled green disc, so its numeral and tick are drawn in the
+// on-accent colour.
+//
+// -----------------------------------------------------------------------------
+
+$checkoutStep-counter-color:                $nnv-textOnAccent;
+
+// Checkbox / radio pips
+// -----------------------------------------------------------------------------
+//
+// Both pip artworks are inline SVG data URIs, so the fill has to be re-encoded
+// rather than set with a variable. The tick sits on the green fill and flips to
+// black; the checklist tick sits on a dark panel and takes the brand green.
+//
+// -----------------------------------------------------------------------------
+
+$radio-pip-color:                           $nnv-textOnAccent;
+
+$check-pip-backgroundImage:                 url("data:image/svg+xml;utf8, %3Csvg%20width%3D%2212%22%20height%3D%2211%22%20viewBox%3D%220%200%2012%2011%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M612.138%202935.716c-1.964%202.295-3.942%204.556-5.92%206.833-.098.115-.194.215-.29.33-.146.168-.42.15-.564%200-.998-.98-1.996-1.977-2.993-2.958-.37-.366.194-.965.564-.582.9.88%201.786%201.762%202.687%202.66%201.997-2.294%203.975-4.57%205.955-6.866.353-.4.916.183.563.582z%22%20transform%3D%22translate(-601%20-2934)%22%20stroke%3D%22%23000%22%20stroke-width%3D%22.6%22%20fill%3D%22%23000%22%20fill-rule%3D%22evenodd%22%2F%3E%3C%2Fsvg%3E");
+
+$checklist-pip-backgroundImage:             url("data:image/svg+xml;utf8, %3Csvg%20width%3D%2718%27%20height%3D%2714%27%20viewBox%3D%270%200%2018%2014%27%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%3E%3Ctitle%3EFill%201%20Copy%208%3C%2Ftitle%3E%3Cpath%20d%3D%27M15.919414%201.21444c.565648-.63879%201.466634.29225.900986.93104-3.141611%203.67166-6.306905%207.28906-9.473915%2010.9327-.154112.18586-.308223.34653-.463708.53203-.232025.26601-.669304.23976-.900986%200-1.59569-1.56947-3.19241-3.16554-4.7881-4.73536-.59242-.58487.308567-1.54357.900987-.93104%201.441578%201.41022%202.857414%202.81937%204.298649%204.25618%203.193782-3.67024%206.359077-7.31389%209.526087-10.98555z%27%20stroke%3D%27%2302FE02%27%20stroke-width%3D%27.2%27%20fill%3D%27%2302FE02%27%20fill-rule%3D%27evenodd%27%2F%3E%3C%2Fsvg%3E");
+
+// Focus ring shared by the checkbox, radio and checklist rows.
+$checklist-focus-boxShadow:                 inset 0 0 0 1px $nnv-green;
+
+// Input foregrounds
+// -----------------------------------------------------------------------------
+//
+// Two ends of the ramp land badly once inverted: `greys.darker` (disabled text)
+// arrives at near-white, and `greys.medium` (placeholders) arrives at the border
+// tone, which is invisible against a dark field. Both are pinned explicitly.
+//
+// -----------------------------------------------------------------------------
+
+$input-disabled-color:                      $nnv-textFaint;
+$input-placeholder-color:                   $nnv-textFaint;
+
+// Loading chrome
+// -----------------------------------------------------------------------------
+//
+// Both spinners draw two lit edges against two unlit ones. Upstream lights them
+// in white against grey, which disappears once the surface is black — the lit
+// edges become brand green and the unlit ones the border tone.
+//
+// -----------------------------------------------------------------------------
+
+$loadingNotification-label-background:       $nnv-surfaceRaised;
+$loadingNotification-label-color:            $nnv-textPrimary;
+$loadingNotification-label-spinnerColor:     $nnv-green $nnv-green $nnv-borderStrong $nnv-borderStrong;
+
+$loadingOverlay-spinner-borderColor:         $nnv-green $nnv-green $nnv-border $nnv-border;
+
+// Modal
+// -----------------------------------------------------------------------------
+//
+// A grey halo is invisible on black; the modal is lifted with a deep drop
+// shadow instead.
+//
+// -----------------------------------------------------------------------------
+
+$reveal-box-shadow:                         0 24px 60px rgba($nnv-black, 0.7);
+
+// Misc "on fill" foregrounds
+// -----------------------------------------------------------------------------
+//
+// The remaining upstream uses of `whites.bright` that meant text rather than
+// surface.
+//
+// -----------------------------------------------------------------------------
+
+$dropdown-button-pip-color-alt:             $nnv-textPrimary;
+$panel-font-color-alt:                      $nnv-textPrimary;
+$callout-panel-titleColor:                  $nnv-textPrimary;
+$callout-panel-headerColor:                 $nnv-textPrimary;

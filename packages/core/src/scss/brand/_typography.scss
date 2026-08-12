@@ -1,0 +1,98 @@
+// =============================================================================
+// NUGGETS NIGHT VISION — TYPOGRAPHY
+// =============================================================================
+//
+// Purpose: match the storefront's voice — Montserrat for anything structural,
+// Open Sans for reading copy, and a single accent colour for links.
+//
+// -----------------------------------------------------------------------------
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.optimizedCheckout-headingPrimary,
+.optimizedCheckout-headingSecondary {
+    color: $nnv-textPrimary;
+    font-family: $nnv-fontHeading;
+    font-weight: fontWeight("bold");
+}
+
+// Section headers
+// -----------------------------------------------------------------------------
+//
+// The storefront sets its small section labels ("FEATURED THERMAL OPTICS",
+// "CATEGORIES") in tracked-out caps. That treatment is applied only to the
+// checkout's equivalent small headings — running it on the h1/h2 step titles
+// would make long shipping and payment headings hard to scan.
+//
+// -----------------------------------------------------------------------------
+
+.cart-section-heading,
+.form-legend-container legend,
+.consignment-header {
+    color: $nnv-textPrimary;
+    font-family: $nnv-fontHeading;
+    font-weight: fontWeight("bold");
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+// Body copy
+// -----------------------------------------------------------------------------
+
+p,
+.optimizedCheckout-contentPrimary {
+    color: $nnv-textBody;
+}
+
+small,
+.optimizedCheckout-contentSecondary,
+.cart-note,
+.instrumentSelect-note,
+.formField--helpText,
+.line-item-options,
+.product-options {
+    color: $nnv-textMuted;
+}
+
+// Links
+// -----------------------------------------------------------------------------
+//
+// Underlines are added on hover only. The accent is bright enough to read as
+// interactive at rest, and the storefront's links are undecorated.
+//
+// -----------------------------------------------------------------------------
+
+a,
+.customer-login-link,
+.cart-header-link,
+.cart-modal-link,
+.signout-link,
+.coupon-discount-toggle {
+    color: $nnv-green;
+
+    &:hover,
+    &:focus {
+        color: $nnv-greenBright;
+    }
+
+    &:active {
+        color: $nnv-greenDark;
+    }
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+// Buttons rendered as links (the "Edit" affordance on a completed step, address
+// actions) inherit from `a` above but must not pick up the underline.
+.stepHeader-actions .button,
+.button--tertiary {
+    &:hover {
+        text-decoration: none;
+    }
+}

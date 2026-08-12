@@ -1,0 +1,6 @@
+services:
+  checkout:
+    image: ghcr.io/telos-1/nnv-checkout:dev
+    build: .
+    ports: 
+      - 8080:8080

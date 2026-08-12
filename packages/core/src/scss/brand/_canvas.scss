@@ -1,0 +1,148 @@
+// =============================================================================
+// NUGGETS NIGHT VISION — CANVAS
+// =============================================================================
+//
+// Purpose: the page shell — background, header, step rails and dividers.
+//
+// BigCommerce injects a stylesheet built from the store's Checkout Settings at
+// runtime, and its load order relative to this bundle is not guaranteed, so the
+// handful of properties it also sets are forced. Everything else relies on
+// normal cascade order.
+//
+// -----------------------------------------------------------------------------
+
+// `color` is forced alongside the background: BigCommerce's stylesheet sets its
+// own body colour — a mid grey chosen for a white page — at the same specificity,
+// so whichever loads last would win. Everything without a colour rule of its own
+// inherits from here, so losing this one turns the whole page dark-grey-on-black.
+html,
+body {
+    background-color: $nnv-black !important;
+    color: $nnv-textBody !important;
+}
+
+body {
+    font-family: $nnv-fontBody;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+}
+
+// BigCommerce's stylesheet colours the bare `p` element for a white page. An
+// element rule beats an inherited value no matter how specific the ancestor, so
+// setting it on `body` above is not enough — every paragraph, and every span
+// inside one without a colour of its own, comes out grey on black.
+//
+// `inherit` rather than a token: a paragraph inside a coloured region (alerts,
+// the order confirmation) should take that region's colour, which is what it
+// would have done without their rule. Qualified with `body` to win on
+// specificity instead of `!important`, so class-based colours still take
+// precedence normally.
+body p {
+    color: inherit;
+}
+
+// Header
+// -----------------------------------------------------------------------------
+//
+// The storefront header is flat black separated by a hairline. The store logo is
+// injected here by BigCommerce; `mix-blend-mode` is deliberately not used, as
+// the brand mark already carries its own dark background.
+//
+// -----------------------------------------------------------------------------
+
+.checkoutHeader {
+    background-color: $nnv-black;
+    border-bottom: 1px solid $nnv-border;
+}
+
+.checkoutHeader-heading {
+    color: $nnv-textPrimary;
+    font-family: $nnv-fontHeading;
+    font-weight: fontWeight("bold");
+    letter-spacing: 0.02em;
+}
+
+// Steps
+// -----------------------------------------------------------------------------
+//
+// Steps stay on the canvas rather than becoming cards — the storefront keeps
+// long-form content flat and uses hairlines to separate it.
+//
+// -----------------------------------------------------------------------------
+
+.checkout-step {
+    border-bottom-color: $nnv-border;
+}
+
+.stepHeader-title {
+    color: $nnv-textPrimary;
+    font-family: $nnv-fontHeading;
+    font-weight: fontWeight("bold");
+}
+
+// Upstream paints the completed-step summary in `color("primary")`, which is now
+// the accent — that would turn every collapsed step bright green. It is a
+// secondary read, so it is pulled back to muted body text.
+.stepHeader-body {
+    color: $nnv-textMuted;
+}
+
+// The counter disc is the one place the accent is used as a fill in the step
+// rail, which is what makes progress scannable.
+.stepHeader-counter {
+    background-color: $nnv-green;
+
+    svg {
+        fill: $nnv-textOnAccent;
+    }
+}
+
+.checkout-step-info {
+    color: $nnv-textMuted;
+}
+
+.checkout-separator {
+    border-color: $nnv-border;
+}
+
+// Selection
+// -----------------------------------------------------------------------------
+
+::selection {
+    background-color: $nnv-green;
+    color: $nnv-textOnAccent;
+}
+
+// Scrollbars
+// -----------------------------------------------------------------------------
+//
+// Scoped to scrolling containers inside the app (cart drawer, modals, dropdowns)
+// rather than applied globally, so the host page's own scrollbar is untouched.
+//
+// -----------------------------------------------------------------------------
+
+.cartDrawer-items,
+.modal-body,
+.dropdownMenu,
+.instrumentSelect-dropdownMenu {
+    scrollbar-color: $nnv-borderStrong $nnv-black;
+    scrollbar-width: thin;
+
+    &::-webkit-scrollbar {
+        height: 8px;
+        width: 8px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: $nnv-black;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: $nnv-borderStrong;
+        border-radius: $nnv-radius;
+
+        &:hover {
+            background: $nnv-green;
+        }
+    }
+}

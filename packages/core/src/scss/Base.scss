@@ -1,5 +1,19 @@
 @import '../../../../node_modules/@bigcommerce/citadel/src/tools/toolkit';
+
+// Brand tokens and palette, ahead of Citadel's globals so $colorMap and
+// $containersMap are built from the Nuggets Night Vision values.
+//
+// Base.scss is the variables-only preamble for the co-located component
+// stylesheets (shipping options, multi-shipping, promotion banners, tooltips,
+// applied redeemables). Unlike App.scss it never imports the app's own
+// settings/global, so without this those files resolve color() and container()
+// against Citadel's stock light palette and render as light-theme fragments
+// inside the dark checkout.
+@import './brand/tokens';
+@import './settings/brand/palette';
+
 @import '../../../../node_modules/@bigcommerce/citadel/src/settings/global/global';
 @import './settings/foundation/foundation';
+@import './settings/brand/tokens';
 
 $global-radius: 4px;

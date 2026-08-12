@@ -1,0 +1,369 @@
+// =============================================================================
+// NUGGETS NIGHT VISION — CONTROLS
+// =============================================================================
+//
+// Purpose: buttons, inputs, selects, choice controls and the checklist rows used
+// for shipping options and payment methods.
+//
+// Most colours already resolve correctly from the inverted palette. What lands
+// here is the work variables cannot do: artwork that is baked into data URIs,
+// browser-owned surfaces (autofill, native pickers), and the third-party phone
+// widget that ships its own light stylesheet.
+//
+// -----------------------------------------------------------------------------
+
+// Buttons
+// -----------------------------------------------------------------------------
+//
+// The storefront CTA is a hard-edged, tracked-out cap. Colour comes from
+// `$buttonStyleMap`; only the typographic treatment is set here.
+//
+// -----------------------------------------------------------------------------
+
+.button {
+    font-family: $nnv-fontHeading;
+    font-weight: fontWeight("bold");
+    letter-spacing: $nnv-buttonLetterSpacing;
+    text-transform: uppercase;
+    transition:
+        background-color 150ms ease,
+        border-color 150ms ease,
+        color 150ms ease;
+
+    &:focus-visible {
+        box-shadow: 0 0 0 2px $nnv-greenGlow;
+        outline: none;
+    }
+}
+
+// The step-level "Edit" control is a button element rendered as a link, so it
+// opts out of the block treatment above.
+.stepHeader-actions .button {
+    letter-spacing: 0.04em;
+
+    &,
+    &:hover,
+    &:focus {
+        background: none;
+        color: $nnv-green;
+    }
+}
+
+// Inputs
+// -----------------------------------------------------------------------------
+
+.form-input,
+.form-select,
+textarea.form-input {
+    background-color: $nnv-surfaceRaised;
+    border-color: $nnv-borderStrong;
+    color: $nnv-textBody;
+
+    &:focus {
+        border-color: $nnv-green;
+        box-shadow: 0 0 0 2px $nnv-greenGlow;
+    }
+
+    &::placeholder {
+        color: $nnv-textFaint;
+        opacity: 1; // Firefox dims placeholders by default.
+    }
+}
+
+.form-field--error {
+    .form-input,
+    .form-select {
+        border-color: $nnv-error;
+
+        &:focus {
+            box-shadow: 0 0 0 2px rgba($nnv-error, 0.25);
+        }
+    }
+}
+
+.form-inlineMessage,
+.form-errors {
+    color: $nnv-error;
+}
+
+.form-label,
+.floating-label {
+    color: $nnv-textMuted;
+}
+
+// Autofill
+// -----------------------------------------------------------------------------
+//
+// Chrome and Safari paint autofilled fields with their own opaque background,
+// which cannot be overridden directly. The standard workaround is an inset
+// shadow large enough to cover the field, with `-webkit-text-fill-color`
+// carrying the foreground. The long transition delay keeps the browser from
+// flashing its own colour back in on blur.
+//
+// -----------------------------------------------------------------------------
+
+.form-input,
+.form-select {
+    &:-webkit-autofill,
+    &:-webkit-autofill:hover,
+    &:-webkit-autofill:focus,
+    &:-webkit-autofill:active {
+        -webkit-box-shadow: 0 0 0 1000px $nnv-surfaceRaised inset;
+        -webkit-text-fill-color: $nnv-textBody;
+        caret-color: $nnv-textBody;
+        transition: background-color 100000s ease-in-out 0s;
+    }
+}
+
+// `components/checkout/paymentProvider/_paymentProvider.scss` paints Stripe's
+// card container with a hard-coded light-yellow autofill state, which flashes a
+// bright block in the middle of the payment step. Matched at the same
+// ID-plus-important specificity, so source order decides.
+#stripe-card-field--webkit-autofill {
+    background-color: $nnv-surfaceRaised !important;
+}
+
+// Select chevron
+// -----------------------------------------------------------------------------
+//
+// Foundation's chevron is a base64 polygon with no `fill`, so it renders black
+// and disappears against a dark field. It is replaced with the same geometry —
+// a 6x3 mark centred in a 24x3 viewport, which is where the arrow's right-hand
+// padding comes from — with an explicit fill.
+//
+// -----------------------------------------------------------------------------
+
+.form-select {
+    background-image: url("data:image/svg+xml;utf8, %3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2724%27%20height%3D%273%27%20viewBox%3D%270%200%206%203%27%3E%3Cpolygon%20points%3D%275.992%2C0%202.992%2C3%20-0.008%2C0%27%20fill%3D%27%239a9a9a%27%2F%3E%3C%2Fsvg%3E");
+
+    &:focus {
+        background-image: url("data:image/svg+xml;utf8, %3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2724%27%20height%3D%273%27%20viewBox%3D%270%200%206%203%27%3E%3Cpolygon%20points%3D%275.992%2C0%202.992%2C3%20-0.008%2C0%27%20fill%3D%27%2302fe02%27%2F%3E%3C%2Fsvg%3E");
+    }
+
+    // Native option lists are drawn by the OS; without an explicit pair the
+    // popup inherits the field's dark background but keeps black system text.
+    option {
+        background-color: $nnv-surfaceRaised;
+        color: $nnv-textBody;
+    }
+}
+
+.dropdown-chevron svg,
+.floating-select-chevron svg {
+    fill: $nnv-textMuted;
+}
+
+// Choice controls
+// -----------------------------------------------------------------------------
+
+.form-checkbox + .form-label::before,
+.form-radio + .form-label::before {
+    background-color: $nnv-surfaceRaised;
+    border-color: $nnv-borderStrong;
+}
+
+.form-checkbox:checked + .form-label::before,
+.form-radio:checked + .form-label::before {
+    background-color: $nnv-green;
+    border-color: $nnv-green;
+}
+
+.form-checkbox:focus + .form-label::before,
+.form-radio:focus + .form-label::before {
+    border-color: $nnv-green;
+    box-shadow: 0 0 0 2px $nnv-greenGlow;
+}
+
+// Checklist rows
+// -----------------------------------------------------------------------------
+//
+// Shipping options and payment methods. The selected row is marked with an
+// accent border and a low-alpha wash rather than a solid green fill — these
+// rows contain body copy, which would be unreadable on the accent.
+//
+// -----------------------------------------------------------------------------
+
+.form-checklist {
+    background-color: $nnv-surface;
+    border-color: $nnv-border;
+}
+
+.form-checklist-item {
+    background-color: $nnv-surface;
+    border-color: $nnv-border;
+
+    &:hover {
+        background-color: $nnv-surfaceHover;
+    }
+}
+
+.form-checklist-item--selected,
+.form-checklist-header--selected {
+    background-color: $nnv-greenTint;
+    border-color: $nnv-green;
+}
+
+.form-checklist-header {
+    background-color: $nnv-surface;
+    border-color: $nnv-border;
+}
+
+.form-fieldset,
+.form-legend-container {
+    border-color: $nnv-border;
+}
+
+// Phone country picker
+// -----------------------------------------------------------------------------
+//
+// intl-tel-input ships a light stylesheet of its own. Its dropdown is appended
+// outside the checkout's markup, so these selectors are intentionally
+// unscoped — there is no shared ancestor to hang them off.
+//
+// -----------------------------------------------------------------------------
+
+.iti__dropdown-content {
+    background-color: $nnv-surfaceRaised;
+    border: 1px solid $nnv-borderStrong;
+    color: $nnv-textBody;
+}
+
+.iti__country {
+    color: $nnv-textBody;
+}
+
+.iti__country.iti__highlight,
+.iti__country:hover {
+    background-color: $nnv-surfaceHover;
+}
+
+.iti__dial-code {
+    color: $nnv-textMuted;
+}
+
+.iti__search-input {
+    background-color: $nnv-surface;
+    border-bottom: 1px solid $nnv-border;
+    color: $nnv-textBody;
+
+    &::placeholder {
+        color: $nnv-textFaint;
+    }
+}
+
+.iti__selected-country-primary,
+.iti__selected-dial-code {
+    color: $nnv-textBody;
+}
+
+// Date picker
+// -----------------------------------------------------------------------------
+//
+// react-datepicker ships its own light stylesheet, imported at the top of
+// App.scss. Several of its selectors are written defensively (`:not([aria-...])`
+// chains, placement-scoped popper rules) and outrank a plain class, so the
+// overrides below deliberately mirror the vendor's specificity rather than
+// reaching for `!important`.
+//
+// -----------------------------------------------------------------------------
+
+.react-datepicker,
+.datepicker {
+    background-color: $nnv-surfaceRaised;
+    border-color: $nnv-borderStrong;
+    color: $nnv-textBody;
+}
+
+.react-datepicker__header,
+.react-datepicker-year-header,
+.react-datepicker__today-button,
+.react-datepicker__year-dropdown,
+.react-datepicker__month-dropdown,
+.react-datepicker__month-year-dropdown,
+.datepicker-days-head {
+    background-color: $nnv-surface;
+    border-color: $nnv-border;
+    color: $nnv-textBody;
+}
+
+// The popper arrow is an SVG that takes the panel's colour, so it has to track
+// the header (pointing up) and the body (pointing down) separately.
+.react-datepicker-popper .react-datepicker__triangle {
+    stroke: $nnv-borderStrong;
+}
+
+.react-datepicker-popper[data-placement^="bottom"] .react-datepicker__triangle {
+    color: $nnv-surface;
+    fill: $nnv-surface;
+}
+
+.react-datepicker-popper[data-placement^="top"] .react-datepicker__triangle {
+    color: $nnv-surfaceRaised;
+    fill: $nnv-surfaceRaised;
+}
+
+.react-datepicker__current-month,
+.react-datepicker__day-name,
+.react-datepicker__time-name,
+.datepicker-month,
+.datepicker-day-name {
+    color: $nnv-textMuted;
+}
+
+.react-datepicker__day,
+.react-datepicker__month-text,
+.react-datepicker__year-text,
+.datepicker-day {
+    color: $nnv-textBody;
+}
+
+.react-datepicker__day:not([aria-disabled="true"]):hover,
+.react-datepicker__month-text:not([aria-disabled="true"]):hover,
+.react-datepicker__year-text:not([aria-disabled="true"]):hover,
+.react-datepicker__year-option:hover,
+.react-datepicker__month-option:hover {
+    background-color: $nnv-surfaceHover;
+}
+
+.react-datepicker__day--selected,
+.react-datepicker__day--keyboard-selected,
+.react-datepicker__month-text--selected,
+.react-datepicker__year-text--selected {
+    background-color: $nnv-green;
+    color: $nnv-textOnAccent;
+}
+
+.react-datepicker__day--disabled,
+.react-datepicker__month-text--disabled,
+.react-datepicker__year-text--disabled {
+    color: $nnv-textFaint;
+}
+
+.react-datepicker__navigation-icon::before {
+    border-color: $nnv-textMuted;
+}
+
+// Tooltips
+// -----------------------------------------------------------------------------
+//
+// Citadel inverts tooltips — a light chip on a light page. Inverting the
+// inversion would put a white block on the dark checkout, so the chip is kept
+// dark and separated from the canvas with a border instead.
+//
+// -----------------------------------------------------------------------------
+
+.tooltip {
+    background: $nnv-surfaceRaised;
+    border: 1px solid $nnv-borderStrong;
+    color: $nnv-textBody;
+
+    // The nub is a CSS triangle drawn with borders — only the edge facing the
+    // trigger is painted, the rest stay transparent.
+    > .nub {
+        border-color: transparent transparent $nnv-surfaceRaised transparent;
+    }
+}
+
+.tap-to-close {
+    color: $nnv-textMuted;
+}

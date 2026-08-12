@@ -1,0 +1,159 @@
+// =============================================================================
+// NUGGETS NIGHT VISION — GLOBAL PALETTE
+// =============================================================================
+//
+// Purpose: re-point Citadel's global colour, container and typography variables
+// at the brand tokens, so the whole framework renders dark without every
+// component needing a bespoke override.
+//
+// IMPORTANT — import position: this file must sit *after* the checkout's own
+// `settings/global/global` (which declares the variables) and *before* Citadel's
+// `settings/global/global` (which freezes them into `$colorMap`,
+// `$containersMap` and `$fontFamilyMap`). Citadel's declarations are `!default`,
+// so ours win and the maps are built from these values.
+//
+// Because the maps do not exist yet, everything below assigns raw tokens —
+// `color()` and friends are not callable here.
+//
+// -----------------------------------------------------------------------------
+
+// Basics
+// -----------------------------------------------------------------------------
+//
+// The grey ramp is *inverted*. Citadel treats "lightest" as the subtlest
+// background and "darkest" as the strongest text; flipping the ends preserves
+// that meaning on a dark canvas and re-themes every consumer in one move
+// (body copy, form labels, borders, skeletons, disabled states).
+//
+// -----------------------------------------------------------------------------
+
+$color-black:                       $nnv-black;
+
+// `whites.bright` is used almost exclusively as a *raised surface* — input,
+// select, modal, checkbox and radio backgrounds. On a dark theme that surface
+// is near-black, not white. The handful of places that meant "text on a
+// coloured fill" are corrected in `settings/brand/_tokens.scss`.
+$color-white:                       $nnv-surfaceRaised;
+
+// `whites.base` is the page canvas ($body-bg).
+$color-whitesBase:                  $nnv-black;
+
+$color-grey:                        $nnv-textMuted;
+$color-greyDarkest:                 $nnv-textPrimary;
+$color-greyDarker:                  $nnv-textBody;
+$color-greyDark:                    #b5b5b5;
+$color-greyMedium:                  $nnv-borderStrong;
+$color-greyLight:                   $nnv-border;
+$color-greyLighter:                 #121212;
+$color-greyLightest:                #0a0a0a;
+
+// Branding
+// -----------------------------------------------------------------------------
+//
+// Primary and highlight are both the brand green. Upstream splits them into
+// "brand" vs "interactive", but Nuggets Night Vision runs a single-accent
+// system, so collapsing them keeps step counters, CTAs, links, focus rings and
+// selection pips visually identical.
+//
+// -----------------------------------------------------------------------------
+
+$color-primary:                     $nnv-green;
+$color-primaryLight:                #7dff7d;
+$color-primaryDark:                 $nnv-greenDark;
+$color-primaryDarker:               $nnv-greenDarker;
+
+// Secondary is the panel surface — it backs the default/tertiary buttons.
+$color-secondary:                   $nnv-surface;
+$color-secondaryDark:               $nnv-surfaceHover;
+$color-secondaryDarker:             #1c1c1c;
+$color-secondaryDarkest:            $nnv-textMuted;
+
+$color-highlight:                   $nnv-green;
+$color-highlightDark:               $nnv-greenDark;
+$color-highlightDarker:             $nnv-greenDarker;
+
+// States
+// -----------------------------------------------------------------------------
+//
+// The `*Light` tones are alert/banner *fills*, so they invert to deep,
+// desaturated washes rather than pastels.
+//
+// -----------------------------------------------------------------------------
+
+$color-error:                       $nnv-error;
+$color-errorLight:                  $nnv-errorSurface;
+
+$color-info:                        $nnv-info;
+$color-infoLight:                   $nnv-infoSurface;
+
+$color-success:                     $nnv-success;
+$color-successLight:                $nnv-successSurface;
+$color-successDark:                 $nnv-green;
+$color-successDarker:               $nnv-greenDark;
+
+$color-warning:                     $nnv-warning;
+$color-warningLight:                $nnv-warningSurface;
+$color-warningDark:                 $nnv-warning;
+
+// Text
+// -----------------------------------------------------------------------------
+
+$color-textBase:                    $nnv-green;
+$color-textBase-hover:              $nnv-greenBright;
+$color-textBase-active:             $nnv-greenDark;
+
+// Checkout extras
+// -----------------------------------------------------------------------------
+
+$color-errorLighter:                $nnv-errorSurfaceSubtle;
+$color-totalSavingsHighlight:       $nnv-green;
+
+// Containers
+// -----------------------------------------------------------------------------
+//
+// The composed `$container-border-global-*` values are re-declared in full:
+// they were already evaluated from the upstream colours above, so overriding
+// only the `-color-` parts would leave the shorthands stale.
+//
+// The size and style are written out rather than interpolated from
+// `$container-border-global-size` / `-style`. Both are `1px solid` upstream and
+// in Citadel's defaults, and spelling them out keeps this file importable from
+// `Base.scss`, which never declares them.
+//
+// -----------------------------------------------------------------------------
+
+$container-border-global-color-base:    $nnv-border;
+$container-border-global-color-dark:    $nnv-borderStrong;
+$container-border-global-base:          1px solid $nnv-border;
+$container-border-global-dark:          1px solid $nnv-borderStrong;
+
+// Shadows read as haze on a light canvas and as depth on a dark one, so this
+// is pushed well past the upstream 0.14 alpha to stay visible against black.
+$container-drop-shadow-base:            0 1px 4px rgba($nnv-black, 0.6);
+
+$container-fill-base:                   $nnv-surface;
+$container-fill-dark:                   $nnv-surfaceRaised;
+
+// Overlays
+// -----------------------------------------------------------------------------
+//
+// Upstream dims the page with 90% white. Inverted, so modals and loading states
+// darken the canvas instead of blowing it out.
+//
+// -----------------------------------------------------------------------------
+
+$overlay-fill:                          rgba($nnv-black, 0.85);
+$loading-spinner-overlay:               rgba($nnv-black, 0.6);
+
+// Typography
+// -----------------------------------------------------------------------------
+//
+// Matches the storefront: Montserrat for headings and UI chrome, Open Sans for
+// body copy. `$fontFamily-montserrat` is what the enhanced (v2) theme layer
+// consumes, so it is pinned to the same stack.
+//
+// -----------------------------------------------------------------------------
+
+$fontFamily-sans:                       $nnv-fontBody;
+$fontFamily-headings:                   $nnv-fontHeading;
+$fontFamily-montserrat:                 $nnv-fontHeading;

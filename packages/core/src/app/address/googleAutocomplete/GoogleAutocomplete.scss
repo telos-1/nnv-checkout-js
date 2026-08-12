@@ -2,15 +2,24 @@
 
 $googleLogoHeight: 18px;
 
+// Deliberately kept light against the otherwise dark checkout. The only
+// attribution asset that ships with the repo is Google's "on white" mark, whose
+// wordmark is coloured for a light plate and is close to illegible on black.
+// Google's Places attribution rules require the supplied mark to be shown
+// unaltered on a suitable background, so the strip keeps its own plate rather
+// than the mark being recoloured or dimmed to match.
+//
+// If the "on non-white" asset is added to static/img, this can move onto
+// $nnv-surface with the brand foreground.
 .co-googleAutocomplete-footer {
-    background-color: color("greys", "lightest");
+    background-color: $nnv-lightPlate;
     background-image: url("../../../static/img/powered_by_google_on_white.png");
     background-position-x: spacing("half");
     background-position-y: center;
     background-repeat: no-repeat;
     border-top: container("border");
     box-sizing: content-box;
-    color: color("greys", "dark");
+    color: $nnv-lightPlateText;
     height: $googleLogoHeight;
     padding: spacing("half");
 }

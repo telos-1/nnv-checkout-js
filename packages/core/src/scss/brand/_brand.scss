@@ -1,0 +1,30 @@
+// =============================================================================
+// NUGGETS NIGHT VISION — BRAND LAYER
+// =============================================================================
+//
+// Purpose: the CSS half of the brand theme, imported last so it settles the
+// cascade against both the upstream components and the enhanced (v2) theme.
+//
+// The theme is split across three insertion points in `App.scss`:
+//
+//   1. `brand/tokens`            — raw brand values, imported first so every
+//                                  later layer can reference them.
+//   2. `settings/brand/palette`  — re-points Citadel's global colour, container
+//                                  and font variables before the maps are built.
+//   3. `settings/brand/tokens`   — fixes component tokens the inversion cannot
+//                                  reach, and rebuilds `$buttonStyleMap`.
+//   4. `brand/brand`             — this file: rules for everything variables
+//                                  cannot express.
+//
+// Ordering matters at each point; the reason is documented in each file.
+//
+// -----------------------------------------------------------------------------
+
+@import "canvas";
+@import "typography";
+@import "controls";
+@import "surfaces";
+
+// Kept last: it is the only layer that forces declarations, and its focus-ring
+// rules rely on winning source order at equal specificity.
+@import "storefrontOverrides";

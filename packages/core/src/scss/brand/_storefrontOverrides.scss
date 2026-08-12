@@ -1,0 +1,253 @@
+// =============================================================================
+// NUGGETS NIGHT VISION — STOREFRONT OVERRIDES
+// =============================================================================
+//
+// Purpose: take back the surfaces BigCommerce colours from outside this bundle.
+//
+// Every `optimizedCheckout-*` class is a hook that BigCommerce styles from the
+// store's Checkout Settings, emitted as a separate stylesheet whose load order
+// relative to this bundle is not guaranteed. Since the brand is defined in code
+// here, those declarations are forced rather than left to the cascade — this is
+// the one place in the theme where `!important` is the correct tool.
+//
+// Keeping them in a single file means the control-panel settings can be handed
+// back later by deleting one import.
+//
+// -----------------------------------------------------------------------------
+
+// `.header` class collision
+// -----------------------------------------------------------------------------
+//
+// `header` is a *typography* class here — the enhanced theme's primary-heading
+// scale. `CheckoutStepHeader` puts it on the title of every active or completed
+// step, `OrderSummaryPrice` puts it on the order-total figure, and two modals
+// put it on their header row. It carries no box of its own, and outside the
+// enhanced theme it carries nothing at all.
+//
+// The storefront theme uses the same bare `.header` for its site banner, and
+// that stylesheet is loaded on the checkout page. So those elements inherit a
+// banner: a light fill, banner height and padding, and a stacking context that
+// lifts the step title over the content beneath it.
+//
+// The banner's box is reset here so each element falls back to its own brand
+// styling — step titles from `brand/_canvas.scss`, modal headers from
+// `brand/_surfaces.scss`. Forced, because the colliding rule is a bare class in
+// a stylesheet whose load order against this one is not guaranteed.
+//
+// The app's own header, `.checkoutHeader`, does not use this class and is
+// unaffected.
+//
+// -----------------------------------------------------------------------------
+
+// Step titles and the order total are text, so every box property the banner
+// brings is dropped. Colour is left alone: the step title takes it from
+// `brand/_canvas.scss` and the total is the accent green set in
+// `brand/_surfaces.scss`, both at a higher specificity than the banner rule.
+.stepHeader-title.header,
+.cart-priceItem-value.header {
+    background: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    position: static !important;
+    width: auto !important;
+    z-index: auto !important;
+}
+
+// Modal headers keep their own surface and spacing; only the banner's fill and
+// geometry are taken back.
+.modal-header.header {
+    background-color: $nnv-surface !important;
+    border-color: $nnv-border !important;
+    box-shadow: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    position: static !important;
+    width: auto !important;
+    z-index: auto !important;
+}
+
+// Type
+// -----------------------------------------------------------------------------
+
+.optimizedCheckout-headingPrimary,
+.optimizedCheckout-headingSecondary {
+    color: $nnv-textPrimary !important;
+    font-family: $nnv-fontHeading !important;
+}
+
+.optimizedCheckout-contentPrimary,
+.optimizedCheckout-primaryContent {
+    color: $nnv-textBody !important;
+    font-family: $nnv-fontBody !important;
+}
+
+.optimizedCheckout-contentSecondary,
+.optimizedCheckout-secondaryDarkest {
+    color: $nnv-textMuted !important;
+    font-family: $nnv-fontBody !important;
+}
+
+// Buttons
+// -----------------------------------------------------------------------------
+
+.optimizedCheckout-buttonPrimary {
+    background-color: $nnv-green !important;
+    border-color: $nnv-green !important;
+    color: $nnv-textOnAccent !important;
+    font-family: $nnv-fontHeading !important;
+
+    &:hover,
+    &:focus {
+        background-color: $nnv-greenDark !important;
+        border-color: $nnv-greenDark !important;
+        color: $nnv-textOnAccent !important;
+    }
+
+    &:active {
+        background-color: $nnv-greenDarker !important;
+        border-color: $nnv-greenDarker !important;
+    }
+
+    &[disabled],
+    &.is-disabled {
+        background-color: $nnv-surface !important;
+        border-color: $nnv-border !important;
+        color: $nnv-textFaint !important;
+    }
+}
+
+.optimizedCheckout-buttonSecondary {
+    background-color: transparent !important;
+    border-color: $nnv-borderStrong !important;
+    color: $nnv-textBody !important;
+    font-family: $nnv-fontHeading !important;
+
+    &:hover,
+    &:focus {
+        border-color: $nnv-green !important;
+        color: $nnv-textPrimary !important;
+    }
+}
+
+// Form fields
+// -----------------------------------------------------------------------------
+
+.optimizedCheckout-form-input,
+.optimizedCheckout-form-select {
+    background-color: $nnv-surfaceRaised !important;
+    border-color: $nnv-borderStrong !important;
+    color: $nnv-textBody !important;
+
+    &::placeholder {
+        color: $nnv-textFaint !important;
+    }
+}
+
+.optimizedCheckout-form-input--focus,
+.optimizedCheckout-form-input:focus,
+.optimizedCheckout-form-select:focus {
+    border-color: $nnv-green !important;
+}
+
+// `components/bigcommerce/forms/_forms.scss` flattens the shadow on
+// `.form-input.optimizedCheckout-form-input:focus` at (0,2,1). The focus ring is
+// restored at the same specificity, so source order decides — which is why this
+// file is imported last.
+.form-input.optimizedCheckout-form-input:focus,
+.form-select.optimizedCheckout-form-select:focus {
+    box-shadow: 0 0 0 2px $nnv-greenGlow;
+}
+
+.optimizedCheckout-form-label {
+    color: $nnv-textMuted !important;
+    font-family: $nnv-fontBody !important;
+}
+
+.optimizedCheckout-form-checkbox + .form-label::before,
+.optimizedCheckout-form-radio + .form-label::before {
+    background-color: $nnv-surfaceRaised !important;
+    border-color: $nnv-borderStrong !important;
+}
+
+.optimizedCheckout-form-checkbox:checked + .form-label::before,
+.optimizedCheckout-form-radio:checked + .form-label::before {
+    background-color: $nnv-green !important;
+    border-color: $nnv-green !important;
+}
+
+// Checklists
+// -----------------------------------------------------------------------------
+
+.optimizedCheckout-form-checklist {
+    background-color: $nnv-surface !important;
+    border-color: $nnv-border !important;
+}
+
+.optimizedCheckout-form-checklist-item {
+    background-color: $nnv-surface !important;
+    border-color: $nnv-border !important;
+
+    &:hover {
+        background-color: $nnv-surfaceHover !important;
+    }
+}
+
+.optimizedCheckout-form-checklist-item--selected {
+    background-color: $nnv-greenTint !important;
+    border-color: $nnv-green !important;
+}
+
+.optimizedCheckout-form-checklist-checkbox:checked + .form-label::before {
+    background-color: $nnv-green !important;
+    border-color: $nnv-green !important;
+}
+
+// Panels and chrome
+// -----------------------------------------------------------------------------
+
+.optimizedCheckout-orderSummary {
+    background-color: $nnv-surface !important;
+    border-color: $nnv-border !important;
+    color: $nnv-textBody !important;
+}
+
+.optimizedCheckout-orderSummary-cartSection {
+    border-color: $nnv-border !important;
+}
+
+.optimizedCheckout-orderSummary-toggle {
+    background-color: $nnv-surface !important;
+    color: $nnv-textBody !important;
+}
+
+.optimizedCheckout-step {
+    background-color: $nnv-green !important;
+    color: $nnv-textOnAccent !important;
+}
+
+.optimizedCheckout-checkoutStep {
+    border-color: $nnv-border !important;
+}
+
+.optimizedCheckout-overlay {
+    background-color: $nnv-surfaceRaised !important;
+    border-color: $nnv-border !important;
+    color: $nnv-textBody !important;
+}
+
+.optimizedCheckout-loadingToaster {
+    background-color: $nnv-surfaceRaised !important;
+    color: $nnv-textPrimary !important;
+}
+
+.optimizedCheckout-discountBanner {
+    background-color: $nnv-greenTint !important;
+    color: $nnv-textBody !important;
+}
+
+.modal.modal--afterOpen.optimizedCheckout-cart-modal {
+    background-color: $nnv-surfaceRaised !important;
+}
