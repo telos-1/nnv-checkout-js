@@ -62,6 +62,53 @@ body p {
     letter-spacing: 0.02em;
 }
 
+// The banner wraps its contents in a link back to the storefront, and carries
+// the brand mark.
+//
+// The mark is a background image rather than markup because BigCommerce renders
+// this header server-side — the bundle can style the element but cannot add
+// children to it. The artwork is transparent, so it needs no plate of its own on
+// the black banner.
+//
+// Boxed at 120x72 against 250x150 of artwork: a little over a 2x downscale, so
+// the raster stays crisp on high-DPI screens. `contain` keeps the aspect ratio,
+// so the box may be adjusted freely as long as it stays under 125x75.
+//
+// It is a wordmark rather than a link in running copy, so it also opts out of the
+// accent colour and hover underline `brand/_typography.scss` gives every `a`.
+// Both selectors here outrank that file's, so nothing needs forcing.
+// The path is relative to `scss/App.scss`, not to this file. Sass leaves `url()`
+// untouched when it inlines a partial and the loader chain has no
+// resolve-url-loader, so css-loader resolves it against the entry stylesheet.
+.checkoutHeader-link {
+    background-image: url("../static/img/nnv-logo.png");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    color: inherit;
+    display: inline-block;
+    height: remCalc(72px);
+    width: remCalc(120px);
+
+    &:hover,
+    &:focus {
+        color: inherit;
+        text-decoration: none;
+    }
+}
+
+// BigCommerce fills the link with the store name, or with an `img` when a logo is
+// set in Checkout Settings. Either would sit on top of the mark above, so both
+// are taken out: the text is hidden visually rather than removed, since it is
+// what gives the link its accessible name.
+.header-logo-text {
+    @include u-hidden("visually");
+}
+
+.checkoutHeader-link img {
+    display: none;
+}
+
 // Steps
 // -----------------------------------------------------------------------------
 //

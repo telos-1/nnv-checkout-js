@@ -69,6 +69,26 @@
     z-index: auto !important;
 }
 
+// Header
+// -----------------------------------------------------------------------------
+//
+// On a full-page checkout the banner is `<header class="checkoutHeader
+// optimizedCheckout-header">`. Both classes land on the same element at the same
+// specificity: the first is painted black in `brand/_canvas.scss`, the second is
+// the Checkout Settings hook that BigCommerce fills from the control panel, whose
+// default is white. With nothing to separate them, whichever stylesheet loads
+// last wins — so the header came out white whenever theirs landed second.
+//
+// Forced here rather than in `brand/_canvas.scss` because the competing rule
+// lives in their stylesheet, which is what this file exists to answer.
+//
+// -----------------------------------------------------------------------------
+
+.optimizedCheckout-header {
+    background-color: $nnv-black !important;
+    border-bottom-color: $nnv-border !important;
+}
+
 // Type
 // -----------------------------------------------------------------------------
 
