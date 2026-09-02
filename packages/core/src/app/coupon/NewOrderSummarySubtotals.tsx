@@ -33,7 +33,6 @@ const NewOrderSummarySubtotals: FunctionComponent<MultiCouponProps> = ({
 }) => {
     const {
         appliedGiftCertificates,
-        isCouponFormCollapsed,
         uiDetails: { shipping, shippingBeforeDiscount },
     } = useMultiCoupon();
 
@@ -41,7 +40,8 @@ const NewOrderSummarySubtotals: FunctionComponent<MultiCouponProps> = ({
         userJourney: { disableCoupon, disableGiftCertificate },
     } = useCapabilities();
 
-    const [isCouponFormVisible, setIsCouponFormVisible] = useState(!isCouponFormCollapsed);
+    // Always start expanded so the coupon code entry is visible as soon as checkout loads.
+    const [isCouponFormVisible, setIsCouponFormVisible] = useState(true);
     const couponFormRef = useRef<HTMLDivElement>(null);
 
     const toggleCouponForm = () => {

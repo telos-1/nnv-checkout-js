@@ -150,18 +150,24 @@ describe('CartSummary Component', () => {
             />
         );
 
-        it('renders redeemable toggle link', () => {
+        it('renders redeemable toggle link with the form already expanded', () => {
             render(<TestComponent />);
 
             expect(screen.getByTestId('redeemable-label')).toBeInTheDocument();
+            expect(screen.getByTestId('redeemableEntry-input')).toBeInTheDocument();
+        });
+
+        it('collapses the redeemable form when the toggle link is clicked', async () => {
+            render(<TestComponent />);
+
+            await userEvent.click(screen.getByTestId('redeemable-label'));
+
             expect(screen.queryByTestId('redeemableEntry-input')).not.toBeInTheDocument();
         });
 
-        describe('when redeemable is clicked', () => {
+        describe('when redeemable is expanded', () => {
             it('renders error and redeemable form', async () => {
                 render(<TestComponent />);
-
-                await userEvent.click(screen.getByTestId('redeemable-label'));
 
                 const submit = screen.getByTestId('redeemableEntry-submit');
 
@@ -182,7 +188,6 @@ describe('CartSummary Component', () => {
 
                 applyGiftCertificate.mockRejectedValue(new Error());
 
-                await userEvent.click(screen.getByTestId('redeemable-label'));
                 await userEvent.type(screen.getByTestId('redeemableEntry-input'), ' foo {enter}');
                 await userEvent.click(screen.getByTestId('redeemableEntry-submit'));
 
@@ -204,8 +209,6 @@ describe('CartSummary Component', () => {
                 shouldCollapseCouponCode={true}
             />,
         );
-
-        await userEvent.click(screen.getByTestId('redeemable-label'));
 
         expect(screen.getByText(translate('redeemable.code_invalid_error'))).toBeInTheDocument();
 

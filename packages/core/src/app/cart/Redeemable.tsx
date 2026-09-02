@@ -79,7 +79,8 @@ const Redeemable: FunctionComponent<
     const toggleLabelId = getRedeemableLabelId(disableGiftCertificate, disableCoupon);
 
     return (
-        <Toggle openByDefault={!shouldCollapseCouponCode}>
+        // Always start expanded so the coupon code entry is visible as soon as checkout loads.
+        <Toggle openByDefault>
             {({ toggle, isOpen }): ReactNode => (
                 <>
                     {shouldCollapseCouponCode && (

@@ -114,7 +114,7 @@ describe('NewOrderSummarySubtotals', () => {
                 expect(screen.getByTestId('redeemable-collapsable')).toBeInTheDocument();
             });
 
-            it('does not render coupon form initially when isCouponFormCollapsed is true', () => {
+            it('renders coupon form initially even when isCouponFormCollapsed is true', () => {
                 mockUseMultiCoupon.mockReturnValue({
                     ...defaultMockReturn,
                     isCouponFormCollapsed: true,
@@ -122,7 +122,7 @@ describe('NewOrderSummarySubtotals', () => {
 
                 renderComponent();
 
-                expect(screen.queryByTestId('redeemable-collapsable')).not.toBeInTheDocument();
+                expect(screen.getByTestId('redeemable-collapsable')).toBeInTheDocument();
             });
 
             it('toggles coupon form visibility when toggle link is clicked', async () => {
@@ -135,19 +135,19 @@ describe('NewOrderSummarySubtotals', () => {
 
                 renderComponent();
 
-                expect(screen.queryByTestId('redeemable-collapsable')).not.toBeInTheDocument();
+                expect(screen.getByTestId('redeemable-collapsable')).toBeInTheDocument();
 
                 const toggleLink = screen.getByTestId('redeemable-label');
-
-                await user.click(toggleLink);
-
-                expect(screen.getByTestId('redeemable-collapsable')).toBeInTheDocument();
 
                 await user.click(toggleLink);
 
                 await waitFor(() => {
                     expect(screen.queryByTestId('redeemable-collapsable')).not.toBeInTheDocument();
                 });
+
+                await user.click(toggleLink);
+
+                expect(screen.getByTestId('redeemable-collapsable')).toBeInTheDocument();
             });
 
             it('sets correct aria attributes on toggle link', () => {
@@ -156,21 +156,21 @@ describe('NewOrderSummarySubtotals', () => {
                 const toggleLink = screen.getByTestId('redeemable-label');
 
                 expect(toggleLink).toHaveAttribute('aria-controls', 'coupon-form-collapsable');
-                expect(toggleLink).toHaveAttribute('aria-expanded', 'false');
+                expect(toggleLink).toHaveAttribute('aria-expanded', 'true');
             });
 
-            it('updates aria-expanded when form is visible', async () => {
+            it('updates aria-expanded when form is hidden', async () => {
                 const user = userEvent.setup();
 
                 renderComponent();
 
                 const toggleLink = screen.getByTestId('redeemable-label');
 
-                expect(toggleLink).toHaveAttribute('aria-expanded', 'false');
+                expect(toggleLink).toHaveAttribute('aria-expanded', 'true');
 
                 await user.click(toggleLink);
 
-                expect(toggleLink).toHaveAttribute('aria-expanded', 'true');
+                expect(toggleLink).toHaveAttribute('aria-expanded', 'false');
             });
         });
 
@@ -587,15 +587,15 @@ describe('NewOrderSummarySubtotals', () => {
 
             renderComponent();
 
-            expect(screen.queryByTestId('redeemable-collapsable')).not.toBeInTheDocument();
-
-            await user.click(screen.getByTestId('redeemable-label'));
             expect(screen.getByTestId('redeemable-collapsable')).toBeInTheDocument();
 
             await user.click(screen.getByTestId('redeemable-label'));
             await waitFor(() => {
                 expect(screen.queryByTestId('redeemable-collapsable')).not.toBeInTheDocument();
             });
+
+            await user.click(screen.getByTestId('redeemable-label'));
+            expect(screen.getByTestId('redeemable-collapsable')).toBeInTheDocument();
         });
 
         it('renders correctly with minimal props', () => {
