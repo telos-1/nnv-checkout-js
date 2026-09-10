@@ -23,7 +23,10 @@ import {
 } from '@bigcommerce/checkout/contexts';
 import { createLocaleContext, getLanguageService } from '@bigcommerce/checkout/locale';
 import { renderWithoutWrapper as render, screen, waitFor } from '@bigcommerce/checkout/test-utils';
-import { CannotCreatePersonalAccountSessionStorage } from '@bigcommerce/checkout/utility';
+import {
+    CannotCreatePersonalAccountSessionStorage,
+    toStorefrontUrl,
+} from '@bigcommerce/checkout/utility';
 
 import { createErrorLogger } from '../../common/error';
 import { getStoreConfig } from '../../config/config.mock';
@@ -340,7 +343,7 @@ describe('OrderConfirmation', () => {
         // eslint-disable-next-line testing-library/no-node-access
         expect(continueButtonContainer.querySelector('form')).toHaveAttribute(
             'action',
-            getStoreConfig().links.siteLink,
+            toStorefrontUrl(getStoreConfig().links.siteLink),
         );
     });
 

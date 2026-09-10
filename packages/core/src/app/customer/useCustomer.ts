@@ -12,6 +12,7 @@ import {
 
 import { useCheckout } from '@bigcommerce/checkout/contexts';
 import { shouldUseStripeLinkByMinimumAmount } from '@bigcommerce/checkout/instrument-utils';
+import { toStorefrontUrl } from '@bigcommerce/checkout/utility';
 
 import { isFloatingLabelEnabled } from '../common/utility';
 import getProviderWithCustomCheckout from '../payment/getProviderWithCustomCheckout';
@@ -177,8 +178,10 @@ export const useCustomer = (): UseCustomerReturn => {
             showNewsletterSignup: canSubscribe,
             defaultNewsletterSignup: defaultShouldSubscribe,
         },
-        links: { forgotPasswordLink: forgotPasswordUrl },
+        links: { forgotPasswordLink },
     } = config;
+
+    const forgotPasswordUrl = toStorefrontUrl(forgotPasswordLink);
 
     const customCheckoutProvider = getProviderWithCustomCheckout(providerWithCustomCheckout);
 

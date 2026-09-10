@@ -21,6 +21,7 @@ import {
     Form,
     Legend,
 } from '@bigcommerce/checkout/ui';
+import { toStorefrontUrl } from '@bigcommerce/checkout/utility';
 
 import CustomerViewType from './CustomerViewType';
 import EmailField from './EmailField';
@@ -95,8 +96,10 @@ const LoginForm: FunctionComponent<
             guestCheckoutEnabled: canCancel,
             shouldRedirectToStorefrontForAuth,
         },
-        links: { forgotPasswordLink: forgotPasswordUrl },
+        links: { forgotPasswordLink },
     } = config;
+
+    const forgotPasswordUrl = toStorefrontUrl(forgotPasswordLink);
 
     const isBuyNowCart = cart.source === 'BUY_NOW';
 

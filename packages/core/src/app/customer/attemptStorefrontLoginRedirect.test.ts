@@ -1,3 +1,5 @@
+import { toStorefrontUrl } from '@bigcommerce/checkout/utility';
+
 import { getStoreConfig } from '../config/config.mock';
 
 import { attemptStorefrontLoginRedirect } from './attemptStorefrontLoginRedirect';
@@ -40,7 +42,9 @@ describe('attemptStorefrontLoginRedirect()', () => {
 
         expect(attemptStorefrontLoginRedirect(config)).toBe(true);
         expect(window.location.assign).toHaveBeenCalledWith(
-            `${config.links.loginLink}?redirectTo=${config.links.checkoutLink}`,
+            `${toStorefrontUrl(config.links.loginLink)}?redirectTo=${toStorefrontUrl(
+                config.links.checkoutLink,
+            )}`,
         );
     });
 });

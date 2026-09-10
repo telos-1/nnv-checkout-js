@@ -1,5 +1,5 @@
 import { type CheckoutContextProps } from '@bigcommerce/checkout/contexts';
-import { isBuyNowCart, isExperimentEnabled } from '@bigcommerce/checkout/utility';
+import { isBuyNowCart, isExperimentEnabled, toStorefrontUrl } from '@bigcommerce/checkout/utility';
 
 import { type WithCheckoutCartSummaryProps } from './CartSummary';
 import mapToRedeemableProps from './mapToRedeemableProps';
@@ -35,7 +35,7 @@ export default function mapToCartSummaryProps(
         isShippingDiscountDisplayEnabled,
         checkout,
         shopperCurrency: config.shopperCurrency,
-        cartUrl: config.links.cartLink,
+        cartUrl: toStorefrontUrl(config.links.cartLink),
         storeCurrency: config.currency,
         storeCreditAmount: isStoreCreditApplied ? Math.min(grandTotal, storeCredit) : undefined,
         ...redeemableProps,

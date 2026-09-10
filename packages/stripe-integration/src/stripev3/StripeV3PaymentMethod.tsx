@@ -20,6 +20,7 @@ import {
     type PaymentMethodResolveId,
     toResolvableComponent,
 } from '@bigcommerce/checkout/payment-integration-api';
+import { toStorefrontUrl } from '@bigcommerce/checkout/utility';
 
 import StripeV3CustomCardForm from './StripeV3CustomCardForm';
 
@@ -116,7 +117,7 @@ const StripeV3PaymentMethod: FunctionComponent<PaymentMethodProps> = ({
             return null;
         }
 
-        return config.links.siteLink;
+        return toStorefrontUrl(config.links.siteLink);
     }, [config]);
 
     const onUnhandledStripeV3Error = useCallback(

@@ -36,6 +36,7 @@ import { OrderConfirmationPageSkeleton } from '@bigcommerce/checkout/ui';
 import {
     CannotCreatePersonalAccountSessionStorage,
     navigateToOrderConfirmation as navigateToOrderConfirmationUtility,
+    toStorefrontUrl,
 } from '@bigcommerce/checkout/utility';
 
 import { withAnalytics } from '../analytics';
@@ -265,7 +266,9 @@ const Checkout = ({
         if (invoiceRedirect && b2bContext?.receiptId) {
             const { links: { siteLink = '' } = {} } = data.getConfig() || {};
 
-            window.location.replace(`${siteLink}/#/invoice?receiptId=${b2bContext.receiptId}`);
+            window.location.replace(
+                `${toStorefrontUrl(siteLink)}/#/invoice?receiptId=${b2bContext.receiptId}`,
+            );
 
             return;
         }

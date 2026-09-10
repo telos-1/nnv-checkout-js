@@ -16,6 +16,7 @@ import {
 } from '@bigcommerce/checkout/contexts';
 import { createLocaleContext } from '@bigcommerce/checkout/locale';
 import { render, screen } from '@bigcommerce/checkout/test-utils';
+import { toStorefrontUrl } from '@bigcommerce/checkout/utility';
 
 import { getCheckout } from '../checkout/checkouts.mock';
 import { createErrorLogger } from '../common/error';
@@ -75,7 +76,7 @@ describe('Edit Cart Component', () => {
         screen.getByText('Confirm').click();
 
         expect(window.location.assign).toHaveBeenCalledWith(
-            'https://store-k1drp8k8.bcapp.dev/cart.php',
+            toStorefrontUrl('https://store-k1drp8k8.bcapp.dev/cart.php'),
         );
     });
 
@@ -97,7 +98,7 @@ describe('Edit Cart Component', () => {
         screen.getByText('Confirm').click();
 
         expect(window.location.assign).toHaveBeenCalledWith(
-            'https://store-k1drp8k8.bcapp.dev/cart.php',
+            toStorefrontUrl('https://store-k1drp8k8.bcapp.dev/cart.php'),
         );
     });
 });

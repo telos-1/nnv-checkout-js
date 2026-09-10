@@ -9,6 +9,7 @@ import React, { type FunctionComponent } from 'react';
 import { type CheckoutContextProps } from '@bigcommerce/checkout/contexts';
 import { TranslatedString } from '@bigcommerce/checkout/locale';
 import { Button, ButtonSize, ButtonVariant } from '@bigcommerce/checkout/ui';
+import { toStorefrontUrl } from '@bigcommerce/checkout/utility';
 
 import { withCheckout } from '../checkout';
 import { isErrorWithType } from '../common/error';
@@ -130,8 +131,8 @@ function mapToWithCheckoutCustomerInfoProps({
         methodId,
         isSignedIn: canSignOut(customer, checkout, methodId),
         isSigningOut: isSigningOut(),
-        logoutLink,
-        checkoutLink,
+        logoutLink: toStorefrontUrl(logoutLink),
+        checkoutLink: toStorefrontUrl(checkoutLink),
         shouldRedirectToStorefrontForAuth: checkoutSettings.shouldRedirectToStorefrontForAuth,
         signOut: checkoutService.signOutCustomer,
     };

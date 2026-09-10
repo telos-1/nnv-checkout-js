@@ -9,6 +9,7 @@ import React, { type FunctionComponent } from 'react';
 import { CheckoutProvider, LocaleProvider } from '@bigcommerce/checkout/contexts';
 import { getLanguageService } from '@bigcommerce/checkout/locale';
 import { render, screen } from '@bigcommerce/checkout/test-utils';
+import { toStorefrontUrl } from '@bigcommerce/checkout/utility';
 
 import { getBillingAddress } from '../billing/billingAddresses.mock';
 import { getCheckout } from '../checkout/checkouts.mock';
@@ -152,8 +153,8 @@ describe('CustomerInfo', () => {
                 },
             });
 
-            const expectedLogoutLink = getStoreConfig().links.logoutLink;
-            const expectedCheckoutLink = getStoreConfig().links.checkoutLink;
+            const expectedLogoutLink = toStorefrontUrl(getStoreConfig().links.logoutLink);
+            const expectedCheckoutLink = toStorefrontUrl(getStoreConfig().links.checkoutLink);
 
             render(<CustomerInfoTest />);
 

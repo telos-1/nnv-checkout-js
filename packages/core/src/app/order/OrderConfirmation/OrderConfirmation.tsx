@@ -11,6 +11,7 @@ import { OrderConfirmationPageSkeleton } from '@bigcommerce/checkout/ui';
 import {
     CannotCreatePersonalAccountSessionStorage,
     isExperimentEnabled,
+    toStorefrontUrl,
 } from '@bigcommerce/checkout/utility';
 
 import { type EmbeddedCheckoutStylesheet } from '../../embeddedCheckout';
@@ -193,7 +194,7 @@ export const OrderConfirmation = ({
             shopperConfig={shopperConfig}
             shopperCurrency={shopperCurrency}
             shouldShowPasswordForm={shouldShowPasswordForm}
-            siteLink={siteLink}
+            siteLink={toStorefrontUrl(siteLink)}
             supportEmail={orderEmail}
             supportPhoneNumber={storePhoneNumber}
         />

@@ -2,7 +2,7 @@ import { type CheckoutSelectors, type CustomError } from '@bigcommerce/checkout-
 import { createSelector } from 'reselect';
 
 import { type CheckoutContextProps } from '@bigcommerce/checkout/contexts';
-import { isExperimentEnabled } from '@bigcommerce/checkout/utility';
+import { isExperimentEnabled, toStorefrontUrl } from '@bigcommerce/checkout/utility';
 
 import { EMPTY_ARRAY } from '../common/utility';
 
@@ -61,9 +61,9 @@ export default function mapToCheckoutProps({
         isShowingWalletButtonsOnTop: walletButtonsOnTopFlag,
         loadCheckout: checkoutService.loadCheckout,
         loadPaymentMethodByIds: checkoutService.loadPaymentMethodByIds,
-        loginUrl,
-        cartUrl,
-        createAccountUrl,
+        loginUrl: toStorefrontUrl(loginUrl),
+        cartUrl: toStorefrontUrl(cartUrl),
+        createAccountUrl: toStorefrontUrl(createAccountUrl),
         promotions,
         subscribeToConsignments: subscribeToConsignmentsSelector({
             checkoutService,
