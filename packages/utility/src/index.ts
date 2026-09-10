@@ -3,7 +3,11 @@ export { default as isExperimentEnabled } from './isExperimentEnabled';
 export { default as navigateToOrderConfirmation } from './navigateToOrderConfirmation';
 export { default as isErrorWithTranslationKey } from './is-error-with-translation-key';
 export { default as hideEditCartLink } from './hideEditCartLink';
-export { default as toStorefrontUrl, STOREFRONT_ORIGIN } from './toStorefrontUrl';
+export {
+    default as toStorefrontUrl,
+    STOREFRONT_ORIGIN,
+    STOREFRONT_CART_URL,
+} from './toStorefrontUrl';
 export {
     B2BSessionStorage,
     type B2BStoredAddressIds,

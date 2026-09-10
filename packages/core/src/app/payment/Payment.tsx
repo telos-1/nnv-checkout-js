@@ -49,7 +49,7 @@ import { ErrorLevelType, type ErrorLogger } from '@bigcommerce/checkout/error-ha
 import { withLanguage, type WithLanguageProps } from '@bigcommerce/checkout/locale';
 import { type PaymentFormValues } from '@bigcommerce/checkout/payment-integration-api';
 import { ChecklistSkeleton, LoadingOverlay } from '@bigcommerce/checkout/ui';
-import { B2BSessionStorage, toStorefrontUrl } from '@bigcommerce/checkout/utility';
+import { B2BSessionStorage, STOREFRONT_CART_URL } from '@bigcommerce/checkout/utility';
 
 import { withAnalytics } from '../analytics';
 import { withCheckout } from '../checkout';
@@ -1052,7 +1052,7 @@ export function mapToPaymentProps(
         cart: getCart(),
         consignments,
         shippingAddress: getShippingAddress(),
-        cartUrl: toStorefrontUrl(config.links.cartLink),
+        cartUrl: STOREFRONT_CART_URL,
         clearError: checkoutService.clearError,
         defaultMethod,
         finalizeOrderError: getFinalizeOrderError(),

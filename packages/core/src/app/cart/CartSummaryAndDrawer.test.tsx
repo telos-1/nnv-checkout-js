@@ -16,7 +16,7 @@ import {
 } from '@bigcommerce/checkout/contexts';
 import { createLocaleContext } from '@bigcommerce/checkout/locale';
 import { render, screen } from '@bigcommerce/checkout/test-utils';
-import { toStorefrontUrl } from '@bigcommerce/checkout/utility';
+import { STOREFRONT_CART_URL } from '@bigcommerce/checkout/utility';
 
 import { getCheckout } from '../checkout/checkouts.mock';
 import { createErrorLogger } from '../common/error';
@@ -75,9 +75,7 @@ describe('Edit Cart Component', () => {
         expect(screen.getAllByRole('alert')).toHaveLength(2);
         screen.getByText('Confirm').click();
 
-        expect(window.location.assign).toHaveBeenCalledWith(
-            toStorefrontUrl('https://store-k1drp8k8.bcapp.dev/cart.php'),
-        );
+        expect(window.location.assign).toHaveBeenCalledWith(STOREFRONT_CART_URL);
     });
 
     it('renders confirmation modal when using multi-shipping and CartSummaryDawer', () => {
@@ -97,8 +95,6 @@ describe('Edit Cart Component', () => {
         expect(screen.getAllByRole('alert')).toHaveLength(2);
         screen.getByText('Confirm').click();
 
-        expect(window.location.assign).toHaveBeenCalledWith(
-            toStorefrontUrl('https://store-k1drp8k8.bcapp.dev/cart.php'),
-        );
+        expect(window.location.assign).toHaveBeenCalledWith(STOREFRONT_CART_URL);
     });
 });

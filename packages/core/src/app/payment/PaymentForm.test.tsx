@@ -99,9 +99,11 @@ describe('PaymentForm', () => {
     it('renders list of payment methods', () => {
         render(<PaymentFormTest {...defaultProps} />);
 
-        expect(screen.getAllByRole('list')).toHaveLength(3);
-        expect(screen.getAllByRole('listitem')).toHaveLength(8);
-        expect(screen.getAllByRole('group')).toHaveLength(2);
+        // The coupon form in this step is expanded on load, so its fieldset and
+        // its (empty) error list are part of these counts.
+        expect(screen.getAllByRole('list')).toHaveLength(4);
+        expect(screen.getAllByRole('listitem')).toHaveLength(9);
+        expect(screen.getAllByRole('group')).toHaveLength(3);
         expect(screen.getAllByRole('radio')).toHaveLength(2);
         expect(screen.getAllByText('Authorizenet')).toHaveLength(3); // 2 radio buttons + 1 title for a11y (hidden)
         expect(
@@ -218,7 +220,11 @@ describe('PaymentForm', () => {
                 name: 'Apply $112.00 store credit to order',
             }),
         ).toBeInTheDocument();
-        expect(screen.getByText(/Apply/)).toBeInTheDocument();
+        // The coupon form in this step carries an "Apply" button of its own, so
+        // this has to name the store credit label rather than any "Apply".
+        expect(
+            screen.getByText(/Apply/, { ignore: '[data-test="redeemableEntry-submit"]' }),
+        ).toBeInTheDocument();
         expect(screen.getByText('$112.00')).toBeInTheDocument();
         expect(screen.getByText(/store credit to order/)).toBeInTheDocument();
     });

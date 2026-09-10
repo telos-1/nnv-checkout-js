@@ -2,7 +2,11 @@ import { type CheckoutSelectors, type CustomError } from '@bigcommerce/checkout-
 import { createSelector } from 'reselect';
 
 import { type CheckoutContextProps } from '@bigcommerce/checkout/contexts';
-import { isExperimentEnabled, toStorefrontUrl } from '@bigcommerce/checkout/utility';
+import {
+    isExperimentEnabled,
+    STOREFRONT_CART_URL,
+    toStorefrontUrl,
+} from '@bigcommerce/checkout/utility';
 
 import { EMPTY_ARRAY } from '../common/utility';
 
@@ -24,11 +28,7 @@ export default function mapToCheckoutProps({
                 floatingLabelEnabled: false,
             },
         } = {},
-        links: {
-            loginLink: loginUrl = '',
-            createAccountLink: createAccountUrl = '',
-            cartLink: cartUrl = '',
-        } = {},
+        links: { loginLink: loginUrl = '', createAccountLink: createAccountUrl = '' } = {},
         displaySettings: { hidePriceFromGuests: isPriceHiddenFromGuests = false } = {},
     } = data.getConfig() || {};
 
@@ -62,7 +62,7 @@ export default function mapToCheckoutProps({
         loadCheckout: checkoutService.loadCheckout,
         loadPaymentMethodByIds: checkoutService.loadPaymentMethodByIds,
         loginUrl: toStorefrontUrl(loginUrl),
-        cartUrl: toStorefrontUrl(cartUrl),
+        cartUrl: STOREFRONT_CART_URL,
         createAccountUrl: toStorefrontUrl(createAccountUrl),
         promotions,
         subscribeToConsignments: subscribeToConsignmentsSelector({

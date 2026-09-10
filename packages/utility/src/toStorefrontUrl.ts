@@ -12,6 +12,15 @@
 export const STOREFRONT_ORIGIN = 'https://nuggetsnightvision.com';
 
 /**
+ * Where "Edit cart" sends the shopper.
+ *
+ * This is a fixed destination rather than a repointed `config.links.cartLink`:
+ * BigCommerce hands us the legacy `/cart.php`, and the storefront serves its
+ * cart at `/cart/`. Swapping the origin alone would land on the wrong path.
+ */
+export const STOREFRONT_CART_URL = `${STOREFRONT_ORIGIN}/cart/`;
+
+/**
  * Repoints an absolute store URL at {@link STOREFRONT_ORIGIN}, keeping its path,
  * query and fragment exactly as they were — `/cart.php`, `/login.php`, the
  * `?redirectTo=` a login round trip depends on.

@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 
 import { configurePublicPath } from '../common/bundler';
+import { repointHeaderLink } from '../common/dom';
 
 import { type CheckoutAppProps } from './CheckoutApp';
 import { initWhyDidYouRender } from './wdyr';
@@ -15,6 +16,10 @@ export default function renderCheckout({
     ...props
 }: RenderCheckoutOptions): void {
     initWhyDidYouRender();
+
+    // The banner is server-rendered, so its logo link is ours to correct only
+    // once we are on the page.
+    repointHeaderLink();
 
     const configuredPublicPath = configurePublicPath(publicPath);
 

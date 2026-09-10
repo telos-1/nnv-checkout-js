@@ -21,6 +21,7 @@ import {
 import { createLocaleContext } from '@bigcommerce/checkout/locale';
 import { getCart, getCheckout, getStoreConfig } from '@bigcommerce/checkout/test-mocks';
 import { render, screen, within } from '@bigcommerce/checkout/test-utils';
+import { toStorefrontUrl } from '@bigcommerce/checkout/utility';
 
 import CheckoutStepType from '../checkout/CheckoutStepType';
 
@@ -304,7 +305,10 @@ describe('Registered Customer', () => {
         );
 
         expect(forgotPasswordLink).toBeInTheDocument();
-        expect(forgotPasswordLink).toHaveAttribute('href', config.links.forgotPasswordLink);
+        expect(forgotPasswordLink).toHaveAttribute(
+            'href',
+            toStorefrontUrl(config.links.forgotPasswordLink),
+        );
     });
 
     it('does not display sign in link anchor tag', async () => {
