@@ -11,7 +11,7 @@ import {
 } from '@bigcommerce/checkout-sdk';
 import { faker } from '@faker-js/faker';
 import userEvent from '@testing-library/user-event';
-import { rest } from 'msw';
+import { http, HttpResponse } from 'msw';
 import React, { act, type FunctionComponent } from 'react';
 
 import { ExtensionService } from '@bigcommerce/checkout/checkout-extension';
@@ -27,6 +27,7 @@ import {
     LocaleProvider,
     ThemeProvider,
 } from '@bigcommerce/checkout/contexts';
+import { assignLocation } from '@bigcommerce/checkout/dom-utils';
 import { createLocaleContext, getLanguageService } from '@bigcommerce/checkout/locale';
 import { CHECKOUT_ROOT_NODE_ID } from '@bigcommerce/checkout/payment-integration-api';
 import {
@@ -56,6 +57,11 @@ import Customer, { type CustomerProps } from './Customer';
 import { getGuestCustomer } from './customers.mock';
 import CustomerViewType from './CustomerViewType';
 
+jest.mock('@bigcommerce/checkout/dom-utils', () => ({
+    ...jest.requireActual('@bigcommerce/checkout/dom-utils'),
+    assignLocation: jest.fn(),
+}));
+
 describe('Customer Component', () => {
     let checkout: CheckoutPageNodeObject;
     let CheckoutTest: FunctionComponent<CheckoutProps>;
@@ -80,6 +86,8 @@ describe('Customer Component', () => {
 
     beforeEach(() => {
         window.scrollTo = jest.fn();
+
+        (assignLocation as jest.Mock).mockClear();
 
         checkoutService = createCheckoutService();
         extensionService = new ExtensionService(checkoutService, createErrorLogger());
@@ -189,16 +197,16 @@ describe('Customer Component', () => {
         await userEvent.click(screen.getByText('Create an account'));
         await userEvent.click(screen.getByText('Cancel'));
         await userEvent.click(screen.getByText('Create an account'));
-        await userEvent.type(await screen.findByLabelText('First Name'), faker.name.firstName());
-        await userEvent.type(await screen.findByLabelText('Last Name'), faker.name.lastName());
+        await userEvent.type(await screen.findByLabelText('First Name'), faker.person.firstName());
+        await userEvent.type(await screen.findByLabelText('Last Name'), faker.person.lastName());
         await userEvent.type(await screen.findByLabelText('Email'), customerEmail);
         await userEvent.type(await screen.findByLabelText('Password'), 'abc');
-        await userEvent.click(screen.getByText('Create Account'));
+        await userEvent.click(screen.getByText('Create account'));
 
         expect(await screen.findByText('Password needs to contain a number')).toBeInTheDocument();
 
         await userEvent.type(await screen.findByLabelText('Password'), '123');
-        await userEvent.click(screen.getByText('Create Account'));
+        await userEvent.click(screen.getByText('Create account'));
 
         expect(await screen.findByText('Password is too short')).toBeInTheDocument();
 
@@ -232,10 +240,10 @@ describe('Customer Component', () => {
         expect(screen.getByText('Referral Code is required')).toBeInTheDocument();
 
         await userEvent.type(await screen.findByLabelText('Referral Code'), 'bigcommerce');
-        await userEvent.click(screen.getByText('Create Account'));
+        await userEvent.click(screen.getByText('Create account'));
 
         expect(await screen.findByText(customerEmail)).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'Sign Out' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Sign out' })).toBeInTheDocument();
     });
 
     it('changes from guest to login view and logs in', async () => {
@@ -255,8 +263,8 @@ describe('Customer Component', () => {
         await userEvent.type(await screen.findByLabelText('Password'), password);
 
         checkout.setRequestHandler(
-            rest.post('/internalapi/v1/checkout/customer', (_, res, ctx) =>
-                res(ctx.json({ data: { persistentCartRetrievalInformation: false } })),
+            http.post('/internalapi/v1/checkout/customer', () =>
+                HttpResponse.json({ data: { persistentCartRetrievalInformation: false } }),
             ),
         );
 
@@ -274,7 +282,7 @@ describe('Customer Component', () => {
         await checkout.waitForShippingStep();
 
         expect(await screen.findByText(email)).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'Sign Out' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Sign out' })).toBeInTheDocument();
     });
 
     it('calls onContinueAsGuestError when empty cart error is thrown', async () => {
@@ -285,14 +293,14 @@ describe('Customer Component', () => {
         await checkout.waitForCustomerStep();
 
         checkout.setRequestHandler(
-            rest.post('/api/storefront/checkouts/*/billing-address', (_, res, ctx) =>
-                res(
-                    ctx.status(400),
-                    ctx.json({
+            http.post('/api/storefront/checkouts/*/billing-address', () =>
+                HttpResponse.json(
+                    {
                         type: 'empty_cart',
                         title: 'Empty cart',
                         detail: 'Cart is empty',
-                    }),
+                    },
+                    { status: 400 },
                 ),
             ),
         );
@@ -316,15 +324,6 @@ describe('Customer Component', () => {
 
     describe('sign in link shouldRedirectToStorefrontForAuth', () => {
         it('redirects to the login page if experiment is on and shouldRedirectToStorefrontForAuth is true', async () => {
-            Object.defineProperty(window, 'location', {
-                writable: true,
-                value: {
-                    // eslint-disable-next-line @typescript-eslint/no-misused-spread
-                    ...window.location,
-                    assign: jest.fn(),
-                },
-            });
-
             const config = {
                 ...checkoutSettings,
                 storeConfig: {
@@ -341,20 +340,11 @@ describe('Customer Component', () => {
             await checkout.waitForCustomerStep();
 
             await userEvent.click(await screen.findByText('Sign in now'));
-            expect(window.location.assign).toHaveBeenCalled();
+            expect(assignLocation).toHaveBeenCalled();
         });
     });
 
     it('redirects to storefront for login if shouldRedirectToStorefrontForAuth is true and login is enforced', async () => {
-        Object.defineProperty(window, 'location', {
-            writable: true,
-            value: {
-                // eslint-disable-next-line @typescript-eslint/no-misused-spread
-                ...window.location,
-                assign: jest.fn(),
-            },
-        });
-
         const config = {
             ...checkoutSettings,
             storeConfig: {
@@ -375,14 +365,14 @@ describe('Customer Component', () => {
         await checkout.waitForCustomerStep();
 
         checkout.setRequestHandler(
-            rest.post('/api/storefront/checkouts/*/billing-address', (_, res, ctx) =>
-                res(
-                    ctx.status(403),
-                    ctx.json({
-                        type: 'about:blank',
+            http.post('/api/storefront/checkouts/*/billing-address', () =>
+                HttpResponse.json(
+                    {
+                        type: 'existing_customer_require_login',
                         title: 'Sign in to Your Account',
                         detail: 'This email is already associated to an account. Please login to continue.',
-                    }),
+                    },
+                    { status: 403 },
                 ),
             ),
         );
@@ -394,7 +384,7 @@ describe('Customer Component', () => {
 
         await userEvent.click(await screen.findByText('Sign In'));
 
-        expect(window.location.assign).toHaveBeenCalled();
+        expect(assignLocation).toHaveBeenCalled();
     });
 });
 

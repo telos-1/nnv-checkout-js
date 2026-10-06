@@ -14,6 +14,7 @@ import {
     LocaleContext,
     type LocaleContextType,
 } from '@bigcommerce/checkout/contexts';
+import { assignLocation } from '@bigcommerce/checkout/dom-utils';
 import { createLocaleContext } from '@bigcommerce/checkout/locale';
 import { render, screen } from '@bigcommerce/checkout/test-utils';
 import { STOREFRONT_CART_URL } from '@bigcommerce/checkout/utility';
@@ -27,6 +28,11 @@ import { getConsignment } from '../shipping/consignment.mock';
 import CartSummary from './CartSummary';
 import CartSummaryDrawer from './CartSummaryDrawer';
 
+jest.mock('@bigcommerce/checkout/dom-utils', () => ({
+    ...jest.requireActual('@bigcommerce/checkout/dom-utils'),
+    assignLocation: jest.fn(),
+}));
+
 describe('Edit Cart Component', () => {
     let checkoutService: CheckoutService;
     let extensionService: ExtensionServiceInterface;
@@ -34,13 +40,8 @@ describe('Edit Cart Component', () => {
     let localeContext: LocaleContextType;
 
     beforeEach(() => {
-        Object.defineProperty(window, 'location', {
-            value: {
-                assign: jest.fn(),
-                pathname: '/checkout',
-            },
-            writable: true,
-        });
+        jest.clearAllMocks();
+        window.history.replaceState({}, '', '/checkout');
 
         localeContext = createLocaleContext(getStoreConfig());
         checkoutService = createCheckoutService();
@@ -70,12 +71,12 @@ describe('Edit Cart Component', () => {
             </CheckoutProvider>,
         );
 
-        screen.getByText('Edit Cart').click();
+        screen.getByText('Edit cart').click();
         expect(screen.getByRole('link', { name: 'Close' })).toBeInTheDocument();
         expect(screen.getAllByRole('alert')).toHaveLength(2);
         screen.getByText('Confirm').click();
 
-        expect(window.location.assign).toHaveBeenCalledWith(STOREFRONT_CART_URL);
+        expect(assignLocation).toHaveBeenCalledWith(STOREFRONT_CART_URL);
     });
 
     it('renders confirmation modal when using multi-shipping and CartSummaryDawer', () => {
@@ -89,12 +90,12 @@ describe('Edit Cart Component', () => {
             </CheckoutProvider>,
         );
 
-        screen.getByText('Show Details').click();
-        screen.getByText('Edit Cart').click();
+        screen.getByText('Show details').click();
+        screen.getByText('Edit cart').click();
         expect(screen.getAllByRole('link', { name: 'Close' })).toHaveLength(2);
         expect(screen.getAllByRole('alert')).toHaveLength(2);
         screen.getByText('Confirm').click();
 
-        expect(window.location.assign).toHaveBeenCalledWith(STOREFRONT_CART_URL);
+        expect(assignLocation).toHaveBeenCalledWith(STOREFRONT_CART_URL);
     });
 });

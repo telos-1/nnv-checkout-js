@@ -44,6 +44,7 @@ import {
     getUniquePaymentMethodId,
     PaymentMethodId,
     PaymentMethodList,
+    useFallbackWhenMethodRemoved,
     usePoMethodDisabledReason,
 } from './paymentMethod';
 import {
@@ -119,6 +120,7 @@ const PaymentForm: FunctionComponent<
     orderExtraFields,
     resetForm,
     selectedMethod,
+    setFieldValue,
     shouldDisableSubmit,
     shouldHidePaymentSubmitButton,
     shouldExecuteSpamCheck,
@@ -237,6 +239,11 @@ const PaymentForm: FunctionComponent<
                     onMethodSelect={onMethodSelect}
                     onUnhandledError={onUnhandledError}
                     resetForm={resetForm}
+                    selectedMethodUniqueId={
+                        selectedMethod &&
+                        getUniquePaymentMethodId(selectedMethod.id, selectedMethod.gateway)
+                    }
+                    setFieldValue={setFieldValue}
                     values={values}
                 />
             )}
@@ -244,6 +251,7 @@ const PaymentForm: FunctionComponent<
             {enhancedThemeV1 && (
                 <PaymentBillingBlock
                     isBillingSameAsShipping={isBillingSameAsShipping ?? true}
+                    isUsingMultiShipping={isUsingMultiShipping ?? false}
                     methodId={selectedMethod?.id}
                     onBillingSameAsShippingChange={onBillingSameAsShippingChange ?? noop}
                     onUnhandledError={onUnhandledError ?? noop}
@@ -311,11 +319,13 @@ interface PaymentMethodListFieldsetProps {
     isInitializingPayment?: boolean;
     isUsingMultiShipping?: boolean;
     methods: PaymentMethod[];
+    selectedMethodUniqueId?: string;
     values: PaymentFormValues;
     isPaymentDataRequired(): boolean;
     onMethodSelect?(method: PaymentMethod): void;
     onUnhandledError?(error: Error): void;
     resetForm(nextValues?: Partial<FormikState<PaymentFormValues>>): void;
+    setFieldValue(field: string, value: string): void;
 }
 
 const PaymentMethodListFieldset: FunctionComponent<PaymentMethodListFieldsetProps> = ({
@@ -327,7 +337,9 @@ const PaymentMethodListFieldset: FunctionComponent<PaymentMethodListFieldsetProp
     onMethodSelect = noop,
     onUnhandledError,
     resetForm,
+    selectedMethodUniqueId,
     values,
+    setFieldValue,
 }) => {
     const { setSubmitted } = useContext(FormContext);
     const { enhancedThemeV1 } = useThemeContext();
@@ -355,6 +367,13 @@ const PaymentMethodListFieldset: FunctionComponent<PaymentMethodListFieldsetProp
             onMethodSelect(method);
         },
         [values, onMethodSelect, resetForm, setSubmitted],
+    );
+
+    useFallbackWhenMethodRemoved(
+        methods,
+        values.paymentProviderRadio,
+        selectedMethodUniqueId,
+        (fallbackUniqueId) => setFieldValue('paymentProviderRadio', fallbackUniqueId),
     );
 
     return (

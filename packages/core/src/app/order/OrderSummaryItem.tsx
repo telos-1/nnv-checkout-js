@@ -64,6 +64,7 @@ const OrderSummaryItemBackorderDetails = ({
 
     const inventorySettings = config?.inventorySettings;
     const showQuantityOnBackorder = !!inventorySettings?.showQuantityOnBackorder;
+    const showQuantityOnHand = !!inventorySettings?.showQuantityOnHand;
     const showBackorderMessage = !!inventorySettings?.showBackorderMessage;
     const shouldDisplayBackorderMessagesOnStorefront =
         !!inventorySettings?.shouldDisplayBackorderMessagesOnStorefront;
@@ -75,7 +76,7 @@ const OrderSummaryItemBackorderDetails = ({
         return null;
     }
 
-    const shouldDisplayQuantityOnHand = showQuantityOnBackorder && !!quantityOnHand;
+    const shouldDisplayQuantityOnHand = showQuantityOnHand && !!quantityOnHand;
     const shouldDisplayQuantityOnBackorder = showQuantityOnBackorder && !!quantityBackordered;
     const shouldDisplayBackorderMessage =
         showBackorderMessage && !!backorderMessage && !!quantityBackordered;
@@ -147,7 +148,7 @@ const OrderSummaryItem: FunctionComponent<OrderSummaryItemProps> = ({
                     className="product-title optimizedCheckout-contentPrimary body-medium"
                     data-test="cart-item-product-title"
                 >
-                    <span className="optimizedCheckout-contentPrimary body-bold">{`${quantity} x `}</span>
+                    <span className="body-bold">{`${quantity} x `}</span>
                     {name}
                 </h4>
                 <OrderSummaryItemBackorderDetails
@@ -202,7 +203,7 @@ const OrderSummaryItem: FunctionComponent<OrderSummaryItemProps> = ({
             <div className="product-column product-actions">
                 {isNumber(amountAfterDiscount) && amountAfterDiscount !== amount && (
                     <div
-                        className="product-price optimizedCheckout-contentPrimary body-medium"
+                        className="product-price body-medium"
                         data-test="cart-item-product-price--afterDiscount"
                     >
                         <ShopperCurrency amount={amountAfterDiscount} />
