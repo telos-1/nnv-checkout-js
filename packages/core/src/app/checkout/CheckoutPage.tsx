@@ -30,6 +30,13 @@ import {
     useCheckout,
     withExtension,
 } from '@bigcommerce/checkout/contexts';
+import {
+    assignTopLocation,
+    reloadLocation,
+    replaceLocation,
+    replaceTopLocation,
+    setTopLocationHref,
+} from '@bigcommerce/checkout/dom-utils';
 import { type ErrorLogger } from '@bigcommerce/checkout/error-handling-utils';
 import { withLanguage, type WithLanguageProps } from '@bigcommerce/checkout/locale';
 import { OrderConfirmationPageSkeleton } from '@bigcommerce/checkout/ui';
@@ -62,10 +69,13 @@ import {
     ShippingStep,
 } from './components';
 import { deleteCartOnExit } from './deleteCartOnExit';
+import { getInitialBillingSameAsShipping } from './getInitialBillingSameAsShipping';
 import useB2BToken from './hooks/useB2BToken';
 import { mapCheckoutComponentErrorMessage } from './mapErrorMessage';
 import mapToCheckoutProps from './mapToCheckoutProps';
 import { shouldShowShippingOptionExpiredError } from './shouldShowShippingOptionExpiredError';
+
+const BUYER_PORTAL_RECEIPT_URL_TEMPLATE = '/#/invoice?receiptId={receiptId}';
 
 export interface CheckoutProps {
     checkoutId: string;
@@ -107,7 +117,6 @@ export interface WithCheckoutProps {
     isPersistingB2BMetadata: boolean;
     isPriceHiddenFromGuests: boolean;
     isShowingWalletButtonsOnTop: boolean;
-    isShippingDiscountDisplayEnabled: boolean;
     loginUrl: string;
     cartUrl: string;
     createAccountUrl: string;
@@ -137,7 +146,6 @@ const Checkout = ({
     isGuestEnabled,
     isShowingWalletButtonsOnTop,
     hasCartChanged,
-    isShippingDiscountDisplayEnabled,
     clearError,
     error,
     steps,
@@ -156,7 +164,7 @@ const Checkout = ({
 }: CheckoutPageProps): ReactElement => {
     const capabilities = useCapabilities();
     const {
-        userJourney: { requiresB2BToken, quoteConfig },
+        userJourney: { requiresB2BToken, quoteConfig, invoiceConfig },
         orderConfirmation: { cannotCreatePersonalAccount, invoiceRedirect },
     } = capabilities;
     const { fetchB2BToken } = useB2BToken();
@@ -265,9 +273,14 @@ const Checkout = ({
 
         if (invoiceRedirect && b2bContext?.receiptId) {
             const { links: { siteLink = '' } = {} } = data.getConfig() || {};
+            const receiptUrlTemplate =
+                invoiceConfig?.receiptUrlTemplate ?? BUYER_PORTAL_RECEIPT_URL_TEMPLATE;
 
-            window.location.replace(
-                `${toStorefrontUrl(siteLink)}/#/invoice?receiptId=${b2bContext.receiptId}`,
+            replaceLocation(
+                `${toStorefrontUrl(siteLink)}${receiptUrlTemplate.replace(
+                    '{receiptId}',
+                    b2bContext.receiptId,
+                )}`,
             );
 
             return;
@@ -291,7 +304,7 @@ const Checkout = ({
         (customerViewType: CustomerViewType): void => {
             if (customerViewType === CustomerViewType.CreateAccount && isEmbedded()) {
                 if (window.top) {
-                    window.top.location.replace(createAccountUrl);
+                    replaceTopLocation(createAccountUrl);
                 }
 
                 return;
@@ -394,7 +407,7 @@ const Checkout = ({
     const handleSignOut = useCallback(
         ({ isCartEmpty }: CustomerSignOutEvent): void => {
             if (isPriceHiddenFromGuests && window.top) {
-                window.top.location.href = cartUrl;
+                setTopLocationHref(cartUrl);
 
                 return;
             }
@@ -411,10 +424,14 @@ const Checkout = ({
                 setState((prevState) => ({ ...prevState, isCartEmpty: true }));
 
                 if (!isEmbedded() && window.top) {
-                    window.top.location.assign(loginUrl);
+                    assignTopLocation(loginUrl);
 
                     return;
                 }
+            } else if (capabilities.customer.reloadPageAfterSignIn) {
+                reloadLocation();
+
+                return;
             }
 
             navigateToStep(CheckoutStepType.Customer);
@@ -448,6 +465,34 @@ const Checkout = ({
         },
         [],
     );
+
+    // The billing step has no same-as-shipping checkbox, so re-derive the flag
+    // from the just-saved addresses; read them at call time as the props
+    // captured before the billing update are stale.
+    const handleBillingNextStep = useCallback((): void => {
+        const { data: currentData } = checkoutService.getState();
+
+        setState((prev) => ({
+            ...prev,
+            isBillingSameAsShipping: getInitialBillingSameAsShipping({
+                billingAddress: currentData.getBillingAddress(),
+                shippingAddress: currentData.getShippingAddress(),
+                defaultValue: prev.isBillingSameAsShipping,
+            }),
+        }));
+
+        navigateToNextIncompleteStep();
+    }, [checkoutService, navigateToNextIncompleteStep]);
+
+    const handleCustomerAuthenticated = useCallback((): void => {
+        if (capabilities.customer.reloadPageAfterSignIn) {
+            reloadLocation();
+
+            return;
+        }
+
+        navigateToNextIncompleteStep();
+    }, [navigateToNextIncompleteStep]);
 
     const handleShippingSignIn = useCallback((): void => {
         setCustomerViewType(CustomerViewType.Login);
@@ -490,14 +535,14 @@ const Checkout = ({
                         checkEmbeddedSupport={checkEmbeddedSupport}
                         isSubscribed={isSubscribed}
                         isWalletButtonsOnTop={isShowingWalletButtonsOnTop}
-                        onAccountCreated={navigateToNextIncompleteStep}
+                        onAccountCreated={handleCustomerAuthenticated}
                         onChangeViewType={setCustomerViewType}
                         onContinueAsGuest={navigateToNextIncompleteStep}
                         onContinueAsGuestError={handleError}
                         onEdit={handleEditStep}
                         onExpanded={handleExpanded}
                         onReady={handleReady}
-                        onSignIn={navigateToNextIncompleteStep}
+                        onSignIn={handleCustomerAuthenticated}
                         onSignInError={handleError}
                         onSignOut={handleSignOut}
                         onSignOutError={handleError}
@@ -517,7 +562,6 @@ const Checkout = ({
                         consignments={consignments || []}
                         isBillingSameAsShipping={isBillingSameAsShipping}
                         isMultiShippingMode={isMultiShippingMode}
-                        isShippingDiscountDisplayEnabled={isShippingDiscountDisplayEnabled}
                         navigateNextStep={handleShippingNextStep}
                         onCreateAccount={handleShippingCreateAccount}
                         onEdit={handleEditStep}
@@ -535,7 +579,7 @@ const Checkout = ({
                 return (
                     <BillingStep
                         billingAddress={billingAddress}
-                        navigateNextStep={navigateToNextIncompleteStep}
+                        navigateNextStep={handleBillingNextStep}
                         onEdit={handleEditStep}
                         onExpanded={handleExpanded}
                         onReady={handleReady}
@@ -651,6 +695,8 @@ const Checkout = ({
 
                 const consignments = data.getConsignments();
                 const cart = data.getCart();
+                const initialBillingAddress = data.getBillingAddress();
+                const initialShippingAddress = data.getShippingAddress();
 
                 const hasMultiShippingEnabled =
                     data.getConfig()?.checkoutSettings.hasMultiShippingEnabled;
@@ -666,7 +712,11 @@ const Checkout = ({
 
                 setState((prevState) => ({
                     ...prevState,
-                    isBillingSameAsShipping: checkoutBillingSameAsShippingEnabled,
+                    isBillingSameAsShipping: getInitialBillingSameAsShipping({
+                        billingAddress: initialBillingAddress,
+                        shippingAddress: initialShippingAddress,
+                        defaultValue: checkoutBillingSameAsShippingEnabled,
+                    }),
                     isSubscribed: defaultNewsletterSignupOption,
                 }));
 

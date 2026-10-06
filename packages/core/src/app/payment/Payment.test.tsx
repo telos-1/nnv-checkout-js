@@ -6,9 +6,10 @@ import {
     type EmbeddedCheckoutMessenger,
     type PaymentMethod,
 } from '@bigcommerce/checkout-sdk';
+import { createGooglePayCheckoutComPaymentStrategy } from '@bigcommerce/checkout-sdk/integrations/google-pay';
 import userEvent from '@testing-library/user-event';
 import { noop } from 'lodash';
-import { rest } from 'msw';
+import { http, HttpResponse } from 'msw';
 import React, { act, type FunctionComponent } from 'react';
 
 import { ExtensionService } from '@bigcommerce/checkout/checkout-extension';
@@ -22,6 +23,7 @@ import {
     LocaleProvider,
     ThemeProvider,
 } from '@bigcommerce/checkout/contexts';
+import { replaceLocation } from '@bigcommerce/checkout/dom-utils';
 import { getLanguageService } from '@bigcommerce/checkout/locale';
 import { CHECKOUT_ROOT_NODE_ID } from '@bigcommerce/checkout/payment-integration-api';
 import {
@@ -55,6 +57,11 @@ import { type PaymentContextProps } from './PaymentContext';
 // enhancedThemeV1 off, so the block never renders and this stays unused there.
 
 let mockEnsureBillingAddressSaved: jest.Mock<Promise<boolean>>;
+
+jest.mock('@bigcommerce/checkout/dom-utils', () => ({
+    ...jest.requireActual('@bigcommerce/checkout/dom-utils'),
+    replaceLocation: jest.fn(),
+}));
 
 jest.mock('./billingForm', () => {
     const ReactActual = require('react');
@@ -110,7 +117,7 @@ describe('Payment step', () => {
     let embeddedMessengerMock: EmbeddedCheckoutMessenger;
     let analyticsTracker: Partial<AnalyticsEvents>;
 
-    const themeV2Config = {
+    const enhancedThemeV1Config = {
         ...checkoutSettings,
         storeConfig: {
             ...checkoutSettings.storeConfig,
@@ -118,7 +125,7 @@ describe('Payment step', () => {
                 ...checkoutSettings.storeConfig.checkoutSettings,
                 checkoutUserExperienceSettings: {
                     ...checkoutSettings.storeConfig.checkoutSettings.checkoutUserExperienceSettings,
-                    checkoutV2Theme: true,
+                    enhancedCheckoutThemeV1: true,
                 },
             },
         },
@@ -141,6 +148,8 @@ describe('Payment step', () => {
 
     beforeEach(() => {
         window.scrollTo = jest.fn();
+
+        (replaceLocation as jest.Mock).mockClear();
 
         checkoutService = createCheckoutService();
         extensionService = new ExtensionService(checkoutService, createErrorLogger());
@@ -206,24 +215,11 @@ describe('Payment step', () => {
 
     it('selects another payment method and places the order successfully', async () => {
         checkout.setRequestHandler(
-            rest.post('/internalapi/v1/checkout/order', (_, res, ctx) =>
-                res(ctx.json(orderResponse)),
-            ),
+            http.post('/internalapi/v1/checkout/order', () => HttpResponse.json(orderResponse)),
         );
         checkout.setRequestHandler(
-            rest.get('/api/storefront/orders/*', (_, res, ctx) => res(ctx.json(orderResponse))),
+            http.get('/api/storefront/orders/*', () => HttpResponse.json(orderResponse)),
         );
-
-        const location = window.location;
-
-        Object.defineProperty(window, 'location', {
-            value: {
-                // eslint-disable-next-line @typescript-eslint/no-misused-spread
-                ...location,
-                replace: jest.fn(),
-            },
-            writable: true,
-        });
 
         checkoutService = checkout.use(CheckoutPreset.CheckoutWithShippingAndBilling);
 
@@ -245,7 +241,7 @@ describe('Payment step', () => {
 
         await act(async () => userEvent.click(screen.getByText('Place Order')));
 
-        expect(window.location.replace).toHaveBeenCalledWith('/order-confirmation');
+        expect(replaceLocation).toHaveBeenCalledWith('/order-confirmation');
     });
 
     it('does not place the order when embedded billing (enhancedThemeV1) is invalid', async () => {
@@ -258,24 +254,13 @@ describe('Payment step', () => {
                     checkoutUserExperienceSettings: {
                         ...checkoutSettings.storeConfig.checkoutSettings
                             .checkoutUserExperienceSettings,
-                        checkoutV2Theme: true,
+                        enhancedCheckoutThemeV1: true,
                     },
                 },
             },
         };
 
         mockEnsureBillingAddressSaved = jest.fn<Promise<boolean>, []>().mockResolvedValue(false);
-
-        const location = window.location;
-
-        Object.defineProperty(window, 'location', {
-            value: {
-                // eslint-disable-next-line @typescript-eslint/no-misused-spread
-                ...location,
-                replace: jest.fn(),
-            },
-            writable: true,
-        });
 
         checkoutService = checkout.use(CheckoutPreset.CheckoutWithShippingAndBilling, {
             config: enhancedThemeV1Config,
@@ -287,11 +272,11 @@ describe('Payment step', () => {
 
         await checkout.waitForPaymentStep();
 
-        await act(async () => userEvent.click(screen.getByText('Place Order')));
+        await act(async () => userEvent.click(screen.getByText('Place order')));
 
         expect(mockEnsureBillingAddressSaved).toHaveBeenCalled();
         expect(submitOrderSpy).not.toHaveBeenCalled();
-        expect(window.location.replace).not.toHaveBeenCalled();
+        expect(replaceLocation).not.toHaveBeenCalled();
     });
 
     it('disables Place Order while the embedded billing (enhancedThemeV1) address is being persisted', async () => {
@@ -304,7 +289,7 @@ describe('Payment step', () => {
                     checkoutUserExperienceSettings: {
                         ...checkoutSettings.storeConfig.checkoutSettings
                             .checkoutUserExperienceSettings,
-                        checkoutV2Theme: true,
+                        enhancedCheckoutThemeV1: true,
                     },
                 },
             },
@@ -319,7 +304,7 @@ describe('Payment step', () => {
         // Keep the billing-address update in flight so isUpdatingBillingAddress
         // stays true while we assert the submit button is disabled.
         checkout.setRequestHandler(
-            rest.put(
+            http.put(
                 '/api/storefront/checkouts/*/billing-address/*',
                 () => new Promise<never>(() => undefined),
             ),
@@ -341,7 +326,29 @@ describe('Payment step', () => {
         );
     });
 
-    describe('billing country change (themeV2)', () => {
+    it('overlays the payment form while the order is being placed (enhancedThemeV1)', async () => {
+        mockEnsureBillingAddressSaved = jest.fn<Promise<boolean>, []>().mockResolvedValue(true);
+
+        checkoutService = checkout.use(CheckoutPreset.CheckoutWithShippingAndBilling, {
+            config: enhancedThemeV1Config,
+        });
+
+        checkout.setRequestHandler(
+            http.post('/internalapi/v1/checkout/order', () => new Promise<never>(() => undefined)),
+        );
+
+        render(<CheckoutTest {...defaultProps} />);
+
+        await checkout.waitForPaymentStep();
+
+        expect(screen.queryByTestId('loading-overlay')).not.toBeInTheDocument();
+
+        await act(async () => userEvent.click(screen.getByText('Place order')));
+
+        expect(await screen.findByTestId('loading-overlay')).toBeInTheDocument();
+    });
+
+    describe('billing country change (enhancedThemeV1)', () => {
         const scrollIntoViewMock = jest.fn();
 
         beforeAll(() => {
@@ -368,7 +375,7 @@ describe('Payment step', () => {
 
         it('does not reload payment methods or show the refresh note on initial load', async () => {
             checkoutService = checkout.use(CheckoutPreset.CheckoutWithShippingAndBilling, {
-                config: themeV2Config,
+                config: enhancedThemeV1Config,
             });
 
             const loadPaymentMethodsSpy = jest.spyOn(checkoutService, 'loadPaymentMethods');
@@ -383,7 +390,7 @@ describe('Payment step', () => {
 
         it('reloads payment methods in place when the billing country changes', async () => {
             checkoutService = checkout.use(CheckoutPreset.CheckoutWithShippingAndBilling, {
-                config: themeV2Config,
+                config: enhancedThemeV1Config,
             });
 
             const loadPaymentMethodsSpy = jest.spyOn(checkoutService, 'loadPaymentMethods');
@@ -414,7 +421,7 @@ describe('Payment step', () => {
 
         it('disables Place Order and overlays the method list while the reload is in flight', async () => {
             checkoutService = checkout.use(CheckoutPreset.CheckoutWithShippingAndBilling, {
-                config: themeV2Config,
+                config: enhancedThemeV1Config,
             });
 
             render(<CheckoutTest {...defaultProps} />);
@@ -429,10 +436,10 @@ describe('Payment step', () => {
             });
 
             checkout.setRequestHandler(
-                rest.get('/api/storefront/payments', async (_, res, ctx) => {
+                http.get('/api/storefront/payments', async () => {
                     await paymentsResponseBlocker;
 
-                    return res(ctx.json(payments));
+                    return HttpResponse.json(payments);
                 }),
             );
 
@@ -461,7 +468,7 @@ describe('Payment step', () => {
 
         it('does not reload payment methods for a billing update that keeps the same country', async () => {
             checkoutService = checkout.use(CheckoutPreset.CheckoutWithShippingAndBilling, {
-                config: themeV2Config,
+                config: enhancedThemeV1Config,
             });
 
             const loadPaymentMethodsSpy = jest.spyOn(checkoutService, 'loadPaymentMethods');
@@ -483,7 +490,7 @@ describe('Payment step', () => {
 
         it('shows a dismissible note when the list refreshes and the selection survives', async () => {
             checkoutService = checkout.use(CheckoutPreset.CheckoutWithShippingAndBilling, {
-                config: themeV2Config,
+                config: enhancedThemeV1Config,
             });
 
             render(<CheckoutTest {...defaultProps} />);
@@ -509,7 +516,9 @@ describe('Payment step', () => {
                 userEvent.click(
                     within(screen.getByTestId('payment-methods-refresh-alert')).getByRole(
                         'button',
-                        { name: 'Close' },
+                        {
+                            name: 'Close',
+                        },
                     ),
                 ),
             );
@@ -519,7 +528,7 @@ describe('Payment step', () => {
 
         it('prompts to select another method when the selection is gone after the refresh', async () => {
             checkoutService = checkout.use(CheckoutPreset.CheckoutWithShippingAndBilling, {
-                config: themeV2Config,
+                config: enhancedThemeV1Config,
             });
 
             render(<CheckoutTest {...defaultProps} />);
@@ -532,8 +541,8 @@ describe('Payment step', () => {
 
             mockBillingAddressPut('US', 'United States');
             checkout.setRequestHandler(
-                rest.get('/api/storefront/payments', (_, res, ctx) =>
-                    res(ctx.json(payments.filter(({ id }) => id !== 'instore'))),
+                http.get('/api/storefront/payments', () =>
+                    HttpResponse.json(payments.filter(({ id }) => id !== 'instore')),
                 ),
             );
 
@@ -549,11 +558,69 @@ describe('Payment step', () => {
             await waitFor(() => {
                 expect(screen.getByTestId('payment-methods-refresh-alert')).toHaveFocus();
             });
+
+            expect(
+                await screen.findByRole('radio', { name: 'Cash on Delivery', checked: true }),
+            ).toBeInTheDocument();
         });
 
-        it('re-tracks the shopper selection, not the default method, after a country reload', async () => {
+        it('falls back to the default method when the selected method is removed by the refresh', async () => {
             checkoutService = checkout.use(CheckoutPreset.CheckoutWithShippingAndBilling, {
-                config: themeV2Config,
+                config: enhancedThemeV1Config,
+            });
+
+            render(<CheckoutTest {...defaultProps} />);
+
+            await checkout.waitForPaymentStep();
+
+            // Move off the default method so the fallback is observable.
+            await act(async () =>
+                userEvent.click(screen.getByRole('radio', { name: 'Cash on Delivery' })),
+            );
+
+            expect(
+                screen.getByRole('radio', { name: 'Cash on Delivery', checked: true }),
+            ).toBeInTheDocument();
+
+            jest.mocked(analyticsTracker.selectedPaymentMethod)?.mockClear();
+
+            mockBillingAddressPut('US', 'United States');
+            checkout.setRequestHandler(
+                http.get('/api/storefront/payments', () =>
+                    HttpResponse.json(payments.filter(({ id }) => id !== 'cod')),
+                ),
+            );
+
+            await act(async () => {
+                await checkoutService.updateBillingAddress({ countryCode: 'US' });
+            });
+
+            expect(
+                await screen.findByRole('radio', { name: 'Pay in Store', checked: true }),
+            ).toBeInTheDocument();
+            expect(
+                screen.queryByRole('radio', { name: 'Cash on Delivery' }),
+            ).not.toBeInTheDocument();
+
+            // The automatic fallback must not dismiss the refresh alert...
+            expect(screen.getByTestId('payment-methods-refresh-alert')).toBeInTheDocument();
+            // ...nor surface an error modal from deinitializing the removed method.
+            expect(screen.queryByText("Something's gone wrong")).not.toBeInTheDocument();
+
+            // Exactly one analytics event for the fallback, despite the checklist echo.
+            expect(analyticsTracker.selectedPaymentMethod).toHaveBeenCalledTimes(1);
+            expect(analyticsTracker.selectedPaymentMethod).toHaveBeenCalledWith(
+                'Pay in Store',
+                'instore',
+            );
+        });
+
+        // The cart total path unmounts the payment form behind the loading skeleton, so
+        // the fallback here comes from the remount re-seeding Formik rather than from
+        // the effect in PaymentForm.
+        it('falls back to the default method after a cart total reload', async () => {
+            checkoutService = checkout.use(CheckoutPreset.CheckoutWithShippingAndBilling, {
+                config: enhancedThemeV1Config,
             });
 
             render(<CheckoutTest {...defaultProps} />);
@@ -564,23 +631,113 @@ describe('Payment step', () => {
                 userEvent.click(screen.getByRole('radio', { name: 'Cash on Delivery' })),
             );
 
+            checkout.setRequestHandler(
+                http.get('/api/storefront/payments', () =>
+                    HttpResponse.json(payments.filter(({ id }) => id !== 'cod')),
+                ),
+            );
+
+            checkout.updateCheckout('put', '/checkout/*', {
+                ...checkoutWithShippingAndBilling,
+                grandTotal: checkoutWithShippingAndBilling.grandTotal + 1,
+            });
+
+            await act(async () => {
+                await checkoutService.updateCheckout({ customerMessage: 'gift wrap please' });
+            });
+
+            expect(
+                await screen.findByRole('radio', { name: 'Pay in Store', checked: true }),
+            ).toBeInTheDocument();
+            expect(screen.queryByText("Something's gone wrong")).not.toBeInTheDocument();
+        });
+
+        it('falls back to the default method when the order is rejected with payment_method_invalid', async () => {
+            checkoutService = checkout.use(CheckoutPreset.CheckoutWithShippingAndBilling, {
+                config: enhancedThemeV1Config,
+            });
+
+            const loadPaymentMethodsSpy = jest.spyOn(checkoutService, 'loadPaymentMethods');
+
+            render(<CheckoutTest {...defaultProps} />);
+
+            await checkout.waitForPaymentStep();
+
+            await act(async () =>
+                userEvent.click(screen.getByRole('radio', { name: 'Cash on Delivery' })),
+            );
+
+            const callsBeforeSubmit = loadPaymentMethodsSpy.mock.calls.length;
+
+            checkout.setRequestHandler(
+                // Shaped as an internal error response so the SDK maps it to a
+                // PaymentMethodInvalidError (type: 'payment_method_invalid').
+                http.post('/internalapi/v1/checkout/order', () =>
+                    HttpResponse.json(
+                        {
+                            errors: {},
+                            status: 400,
+                            title: 'Payment method is invalid.',
+                            type: 'invalid_payment_provider',
+                        },
+                        { status: 400 },
+                    ),
+                ),
+            );
+            checkout.setRequestHandler(
+                http.get('/api/storefront/payments', () =>
+                    HttpResponse.json(payments.filter(({ id }) => id !== 'cod')),
+                ),
+            );
+
+            await act(async () => {
+                await userEvent.click(screen.getByText(/place order/i));
+            });
+
+            await waitFor(() =>
+                expect(loadPaymentMethodsSpy.mock.calls.length).toBeGreaterThan(callsBeforeSubmit),
+            );
+
+            expect(
+                await screen.findByRole('radio', { name: 'Pay in Store', checked: true }),
+            ).toBeInTheDocument();
+
+            // Only the intended payment_method_invalid modal - tearing down the removed
+            // method must not add a MissingPaymentMethod error on top of it.
+            expect(screen.getByRole('dialog')).toHaveTextContent(
+                'The selected payment method is no longer valid. Click OK to see the most up-to-date payment methods.',
+            );
+        });
+
+        it('does not re-track the selection when it survives a country reload', async () => {
+            checkoutService = checkout.use(CheckoutPreset.CheckoutWithShippingAndBilling, {
+                config: enhancedThemeV1Config,
+            });
+
+            render(<CheckoutTest {...defaultProps} />);
+
+            await checkout.waitForPaymentStep();
+
+            await act(async () =>
+                userEvent.click(screen.getByRole('radio', { name: 'Cash on Delivery' })),
+            );
+
+            jest.mocked(analyticsTracker.selectedPaymentMethod)?.mockClear();
+
             mockBillingAddressPut('US', 'United States');
 
             await act(async () => {
                 await checkoutService.updateBillingAddress({ countryCode: 'US' });
             });
 
-            await waitFor(() =>
-                expect(analyticsTracker.selectedPaymentMethod).toHaveBeenLastCalledWith(
-                    'Cash on Delivery',
-                    'cod',
-                ),
-            );
+            await screen.findByTestId('payment-methods-refresh-alert');
+
+            expect(analyticsTracker.selectedPaymentMethod).not.toHaveBeenCalled();
         });
 
         it('clears the refresh note when the methods reload for a cart total change', async () => {
             checkoutService = checkout.use(CheckoutPreset.CheckoutWithShippingAndBilling, {
-                config: themeV2Config,
+                config: enhancedThemeV1Config,
             });
 
             render(<CheckoutTest {...defaultProps} />);
@@ -618,7 +775,7 @@ describe('Payment step', () => {
 
         it('dismisses the refresh note once the shopper selects a payment method', async () => {
             checkoutService = checkout.use(CheckoutPreset.CheckoutWithShippingAndBilling, {
-                config: themeV2Config,
+                config: enhancedThemeV1Config,
             });
 
             render(<CheckoutTest {...defaultProps} />);
@@ -642,7 +799,7 @@ describe('Payment step', () => {
 
         it('stops watching the billing country after unmount', async () => {
             checkoutService = checkout.use(CheckoutPreset.CheckoutWithShippingAndBilling, {
-                config: themeV2Config,
+                config: enhancedThemeV1Config,
             });
 
             const loadPaymentMethodsSpy = jest.spyOn(checkoutService, 'loadPaymentMethods');
@@ -678,7 +835,7 @@ describe('Payment step', () => {
         };
 
         checkout.setRequestHandler(
-            rest.get('/api/storefront/payments', (_, res, ctx) => res(ctx.json([paypal, stripe]))),
+            http.get('/api/storefront/payments', () => HttpResponse.json([paypal, stripe])),
         );
 
         checkoutService = checkout.use(CheckoutPreset.CheckoutWithShippingAndBilling);
@@ -734,18 +891,16 @@ describe('Payment step', () => {
         });
 
         checkout.setRequestHandler(
-            rest.post('api/storefront/checkouts/*/store-credit', (_, res, ctx) =>
-                res(
-                    ctx.json({
-                        ...checkoutWithShippingAndBilling,
-                        isStoreCreditApplied: true,
-                        outstandingBalance: 0,
-                        customer: {
-                            ...customer,
-                            storeCredit: 1000,
-                        },
-                    }),
-                ),
+            http.post('api/storefront/checkouts/*/store-credit', () =>
+                HttpResponse.json({
+                    ...checkoutWithShippingAndBilling,
+                    isStoreCreditApplied: true,
+                    outstandingBalance: 0,
+                    customer: {
+                        ...customer,
+                        storeCredit: 1000,
+                    },
+                }),
             ),
         );
 
@@ -806,9 +961,7 @@ describe('Payment step', () => {
         };
 
         checkout.setRequestHandler(
-            rest.get('/api/storefront/payments', (_, res, ctx) =>
-                res(ctx.json([payments[0], amazonPay])),
-            ),
+            http.get('/api/storefront/payments', () => HttpResponse.json([payments[0], amazonPay])),
         );
 
         checkoutService = checkout.use(CheckoutPreset.CheckoutWithMultiShippingAndBilling);
@@ -833,9 +986,7 @@ describe('Payment step', () => {
         };
 
         checkout.setRequestHandler(
-            rest.get('/api/storefront/payments', (_, res, ctx) =>
-                res(ctx.json([payments[0], bolt])),
-            ),
+            http.get('/api/storefront/payments', () => HttpResponse.json([payments[0], bolt])),
         );
 
         checkoutService = checkout.use(CheckoutPreset.CheckoutWithShippingAndBilling);
@@ -859,9 +1010,7 @@ describe('Payment step', () => {
         };
 
         checkout.setRequestHandler(
-            rest.get('/api/storefront/payments', (_, res, ctx) =>
-                res(ctx.json([payments[0], braintree])),
-            ),
+            http.get('/api/storefront/payments', () => HttpResponse.json([payments[0], braintree])),
         );
 
         checkoutService = checkout.use(CheckoutPreset.CheckoutWithShippingAndBilling);
@@ -915,8 +1064,8 @@ describe('Payment step', () => {
         };
 
         checkout.setRequestHandler(
-            rest.get('/api/storefront/payments', (_, res, ctx) =>
-                res(ctx.json([card, facilypay6, facilypay3])),
+            http.get('/api/storefront/payments', () =>
+                HttpResponse.json([card, facilypay6, facilypay3]),
             ),
         );
 
@@ -967,9 +1116,7 @@ describe('Payment step', () => {
         };
 
         checkout.setRequestHandler(
-            rest.get('/api/storefront/payments', (_, res, ctx) =>
-                res(ctx.json([facilypay6, facilypay3])),
-            ),
+            http.get('/api/storefront/payments', () => HttpResponse.json([facilypay6, facilypay3])),
         );
 
         checkoutService = checkout.use(CheckoutPreset.CheckoutWithShippingAndBilling, {
@@ -1004,8 +1151,8 @@ describe('Payment step', () => {
         };
 
         checkout.setRequestHandler(
-            rest.get('/api/storefront/payments', (_, res, ctx) =>
-                res(ctx.json([installments3, installments6])),
+            http.get('/api/storefront/payments', () =>
+                HttpResponse.json([installments3, installments6]),
             ),
         );
 
@@ -1021,7 +1168,7 @@ describe('Payment step', () => {
 
     it('does not render payment form if there are no methods', async () => {
         checkout.setRequestHandler(
-            rest.get('/api/storefront/payments', (_, res, ctx) => res(ctx.json([]))),
+            http.get('/api/storefront/payments', () => HttpResponse.json([])),
         );
 
         checkoutService = checkout.use(CheckoutPreset.CheckoutWithShippingAndBilling);
@@ -1034,13 +1181,13 @@ describe('Payment step', () => {
 
     it('renders error modal if there is error when submitting order', async () => {
         checkout.setRequestHandler(
-            rest.post('/internalapi/v1/checkout/order', (_, res, ctx) =>
-                res(
-                    ctx.status(500),
-                    ctx.json({
+            http.post('/internalapi/v1/checkout/order', () =>
+                HttpResponse.json(
+                    {
                         title: 'The tax provider is unavailable.',
                         type: 'order_error',
-                    }),
+                    },
+                    { status: 500 },
                 ),
             ),
         );
@@ -1139,24 +1286,11 @@ describe('Payment step', () => {
 
         it('refreshes B2B payment methods before submitting order when persistB2BMetadata capability is enabled', async () => {
             checkout.setRequestHandler(
-                rest.post('/internalapi/v1/checkout/order', (_, res, ctx) =>
-                    res(ctx.json(orderResponse)),
-                ),
+                http.post('/internalapi/v1/checkout/order', () => HttpResponse.json(orderResponse)),
             );
             checkout.setRequestHandler(
-                rest.get('/api/storefront/orders/*', (_, res, ctx) => res(ctx.json(orderResponse))),
+                http.get('/api/storefront/orders/*', () => HttpResponse.json(orderResponse)),
             );
-
-            const location = window.location;
-
-            Object.defineProperty(window, 'location', {
-                value: {
-                    // eslint-disable-next-line @typescript-eslint/no-misused-spread
-                    ...location,
-                    replace: jest.fn(),
-                },
-                writable: true,
-            });
 
             checkoutService = checkout.use(CheckoutPreset.CheckoutWithShippingAndBilling, {
                 config: createConfigWithPersistB2BMetadata(),
@@ -1190,24 +1324,11 @@ describe('Payment step', () => {
 
         it('does not refresh B2B payment methods before submitting order when persistB2BMetadata capability is disabled', async () => {
             checkout.setRequestHandler(
-                rest.post('/internalapi/v1/checkout/order', (_, res, ctx) =>
-                    res(ctx.json(orderResponse)),
-                ),
+                http.post('/internalapi/v1/checkout/order', () => HttpResponse.json(orderResponse)),
             );
             checkout.setRequestHandler(
-                rest.get('/api/storefront/orders/*', (_, res, ctx) => res(ctx.json(orderResponse))),
+                http.get('/api/storefront/orders/*', () => HttpResponse.json(orderResponse)),
             );
-
-            const location = window.location;
-
-            Object.defineProperty(window, 'location', {
-                value: {
-                    // eslint-disable-next-line @typescript-eslint/no-misused-spread
-                    ...location,
-                    replace: jest.fn(),
-                },
-                writable: true,
-            });
 
             checkoutService = checkout.use(CheckoutPreset.CheckoutWithShippingAndBilling);
 
@@ -1247,9 +1368,7 @@ describe('Payment step', () => {
 
         it('does not submit the order when B2B payment methods refresh fails before submit', async () => {
             checkout.setRequestHandler(
-                rest.post('/internalapi/v1/checkout/order', (_, res, ctx) =>
-                    res(ctx.json(orderResponse)),
-                ),
+                http.post('/internalapi/v1/checkout/order', () => HttpResponse.json(orderResponse)),
             );
 
             checkoutService = checkout.use(CheckoutPreset.CheckoutWithShippingAndBilling, {
@@ -1276,17 +1395,6 @@ describe('Payment step', () => {
         });
 
         it('persists B2B metadata after finalizing the order on mount when persistB2BMetadata capability is enabled', async () => {
-            const location = window.location;
-
-            Object.defineProperty(window, 'location', {
-                value: {
-                    // eslint-disable-next-line @typescript-eslint/no-misused-spread
-                    ...location,
-                    replace: jest.fn(),
-                },
-                writable: true,
-            });
-
             checkoutService = checkout.use(CheckoutPreset.CheckoutWithShippingAndBilling, {
                 config: createConfigWithPersistB2BMetadata(),
                 checkout: {
@@ -1322,17 +1430,6 @@ describe('Payment step', () => {
         });
 
         it('persists the address extra fields from the checkout object after finalizing on mount', async () => {
-            const location = window.location;
-
-            Object.defineProperty(window, 'location', {
-                value: {
-                    // eslint-disable-next-line @typescript-eslint/no-misused-spread
-                    ...location,
-                    replace: jest.fn(),
-                },
-                writable: true,
-            });
-
             const { billingAddress } = checkoutWithShippingAndBilling;
             const [consignment] = checkoutWithShippingAndBilling.consignments;
 
@@ -1389,38 +1486,25 @@ describe('Payment step', () => {
 
         it('stores the address IDs returned by the order endpoint, persists them and clears them afterwards', async () => {
             checkout.setRequestHandler(
-                rest.post('/internalapi/v1/checkout/order', (_, res, ctx) =>
-                    res(
-                        ctx.json({
-                            ...orderResponse,
-                            data: {
-                                ...orderResponse.data,
-                                order: {
-                                    ...orderResponse.data.order,
-                                    b2bMetadata: {
-                                        billingAddressId: 111,
-                                        shippingAddressId: 222,
-                                    },
+                http.post('/internalapi/v1/checkout/order', () =>
+                    HttpResponse.json({
+                        ...orderResponse,
+                        data: {
+                            ...orderResponse.data,
+                            order: {
+                                ...orderResponse.data.order,
+                                b2bMetadata: {
+                                    billingAddressId: 111,
+                                    shippingAddressId: 222,
                                 },
                             },
-                        }),
-                    ),
+                        },
+                    }),
                 ),
             );
             checkout.setRequestHandler(
-                rest.get('/api/storefront/orders/*', (_, res, ctx) => res(ctx.json(orderResponse))),
+                http.get('/api/storefront/orders/*', () => HttpResponse.json(orderResponse)),
             );
-
-            const location = window.location;
-
-            Object.defineProperty(window, 'location', {
-                value: {
-                    // eslint-disable-next-line @typescript-eslint/no-misused-spread
-                    ...location,
-                    replace: jest.fn(),
-                },
-                writable: true,
-            });
 
             checkoutService = checkout.use(CheckoutPreset.CheckoutWithShippingAndBilling, {
                 config: createConfigWithPersistB2BMetadata(),
@@ -1464,17 +1548,6 @@ describe('Payment step', () => {
         });
 
         it('persists B2B metadata with isInvoice true and the captured form values when the invoiceRedirect capability is enabled', async () => {
-            const location = window.location;
-
-            Object.defineProperty(window, 'location', {
-                value: {
-                    // eslint-disable-next-line @typescript-eslint/no-misused-spread
-                    ...location,
-                    replace: jest.fn(),
-                },
-                writable: true,
-            });
-
             B2BSessionStorage.setPaymentValues({ invoicePaymentComment: 'Invoice me' });
 
             checkoutService = checkout.use(CheckoutPreset.CheckoutWithShippingAndBilling, {
@@ -1526,17 +1599,6 @@ describe('Payment step', () => {
         });
 
         it('clears B2B sessionStorage even when persisting metadata fails', async () => {
-            const location = window.location;
-
-            Object.defineProperty(window, 'location', {
-                value: {
-                    // eslint-disable-next-line @typescript-eslint/no-misused-spread
-                    ...location,
-                    replace: jest.fn(),
-                },
-                writable: true,
-            });
-
             B2BSessionStorage.setAddressIds({ billingAddressId: 111, shippingAddressId: 222 });
 
             checkoutService = checkout.use(CheckoutPreset.CheckoutWithShippingAndBilling, {
@@ -1572,17 +1634,6 @@ describe('Payment step', () => {
         });
 
         it('does not persist B2B metadata after finalizing the order on mount when persistB2BMetadata capability is disabled', async () => {
-            const location = window.location;
-
-            Object.defineProperty(window, 'location', {
-                value: {
-                    // eslint-disable-next-line @typescript-eslint/no-misused-spread
-                    ...location,
-                    replace: jest.fn(),
-                },
-                writable: true,
-            });
-
             checkoutService = checkout.use(CheckoutPreset.CheckoutWithShippingAndBilling, {
                 checkout: {
                     ...checkoutWithShippingAndBilling,
@@ -1603,6 +1654,62 @@ describe('Payment step', () => {
             await waitFor(() => expect(finalizeSpy).toHaveBeenCalled());
 
             expect(persistSpy).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('PI-5643.google_pay_handle_unsuccessful_3ds_check experiment', () => {
+        const createConfigWithExperimentOn = () => ({
+            ...checkoutSettings,
+            storeConfig: {
+                ...checkoutSettings.storeConfig,
+                checkoutSettings: {
+                    ...checkoutSettings.storeConfig.checkoutSettings,
+                    features: {
+                        ...checkoutSettings.storeConfig.checkoutSettings.features,
+                        'PI-5643.google_pay_handle_unsuccessful_3ds_check': true,
+                    },
+                },
+            },
+        });
+
+        it('registers the Google Pay gateway-variant strategies for finalizeOrderIfNeeded when the experiment is on', async () => {
+            checkoutService = checkout.use(CheckoutPreset.CheckoutWithShippingAndBilling, {
+                config: createConfigWithExperimentOn(),
+            });
+
+            const finalizeSpy = jest
+                .spyOn(checkoutService, 'finalizeOrderIfNeeded')
+                .mockResolvedValue(checkoutService.getState());
+
+            render(<CheckoutTest {...defaultProps} />);
+
+            await waitFor(() =>
+                expect(finalizeSpy).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        integrations: expect.arrayContaining([
+                            createGooglePayCheckoutComPaymentStrategy,
+                        ]),
+                    }),
+                ),
+            );
+        });
+
+        it('does not register the Google Pay gateway-variant strategies for finalizeOrderIfNeeded when the experiment is off', async () => {
+            checkoutService = checkout.use(CheckoutPreset.CheckoutWithShippingAndBilling);
+
+            const finalizeSpy = jest
+                .spyOn(checkoutService, 'finalizeOrderIfNeeded')
+                .mockResolvedValue(checkoutService.getState());
+
+            render(<CheckoutTest {...defaultProps} />);
+
+            await waitFor(() => expect(finalizeSpy).toHaveBeenCalled());
+
+            const [{ integrations } = {}] = finalizeSpy.mock.calls[0];
+
+            expect(integrations).not.toEqual(
+                expect.arrayContaining([createGooglePayCheckoutComPaymentStrategy]),
+            );
         });
     });
 });

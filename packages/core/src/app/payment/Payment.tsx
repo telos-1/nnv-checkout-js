@@ -23,6 +23,20 @@ import {
     createCheckoutComSepaPaymentStrategy,
 } from '@bigcommerce/checkout-sdk/integrations/checkoutcom-custom';
 import { createClearpayPaymentStrategy } from '@bigcommerce/checkout-sdk/integrations/clearpay';
+import {
+    createGooglePayAdyenV2PaymentStrategy,
+    createGooglePayAdyenV3PaymentStrategy,
+    createGooglePayAuthorizeNetPaymentStrategy,
+    createGooglePayBigCommercePaymentsPaymentStrategy,
+    createGooglePayBraintreePaymentStrategy,
+    createGooglePayCheckoutComPaymentStrategy,
+    createGooglePayCybersourcePaymentStrategy,
+    createGooglePayOrbitalPaymentStrategy,
+    createGooglePayPPCPPaymentStrategy,
+    createGooglePayStripePaymentStrategy,
+    createGooglePayTdOnlineMartPaymentStrategy,
+    createGooglePayWorldpayAccessPaymentStrategy,
+} from '@bigcommerce/checkout-sdk/integrations/google-pay';
 import { createOffsitePaymentStrategy } from '@bigcommerce/checkout-sdk/integrations/offsite';
 import { createPaypalExpressPaymentStrategy } from '@bigcommerce/checkout-sdk/integrations/paypal-express';
 import { createSagePayPaymentStrategy } from '@bigcommerce/checkout-sdk/integrations/sagepay';
@@ -43,11 +57,16 @@ import {
     type AnalyticsContextProps,
     type CheckoutContextProps,
     useCapabilities,
+    useCheckout,
     useThemeContext,
 } from '@bigcommerce/checkout/contexts';
+import { assignTopLocation, replaceLocation } from '@bigcommerce/checkout/dom-utils';
 import { ErrorLevelType, type ErrorLogger } from '@bigcommerce/checkout/error-handling-utils';
 import { withLanguage, type WithLanguageProps } from '@bigcommerce/checkout/locale';
-import { type PaymentFormValues } from '@bigcommerce/checkout/payment-integration-api';
+import {
+    isGooglePayHandleUnsuccessful3dsCheckExperimentOn,
+    type PaymentFormValues,
+} from '@bigcommerce/checkout/payment-integration-api';
 import { ChecklistSkeleton, LoadingOverlay } from '@bigcommerce/checkout/ui';
 import { B2BSessionStorage, STOREFRONT_CART_URL } from '@bigcommerce/checkout/utility';
 
@@ -76,7 +95,12 @@ import mapSubmitOrderErrorMessage, { mapSubmitOrderErrorTitle } from './mapSubmi
 import mapToOrderRequestBody from './mapToOrderRequestBody';
 import PaymentContext, { type EnsureBillingAddressSaved } from './PaymentContext';
 import PaymentForm from './PaymentForm';
-import { getUniquePaymentMethodId, PaymentMethodProviderType } from './paymentMethod';
+import {
+    getUniquePaymentMethodId,
+    isSamePaymentMethod,
+    PaymentMethodProviderType,
+    useFallbackWhenMethodRemoved,
+} from './paymentMethod';
 import { getFilteredPaymentMethodsWithDefault } from './paymentMethodFilters';
 import { type PaymentMethodsRefreshAlertData } from './PaymentMethodsRefreshAlert';
 
@@ -171,14 +195,14 @@ const Payment = (
     const grandTotalChangeUnsubscribe = useRef<() => void>();
     const billingAddressChangeUnsubscribe = useRef<() => void>();
     const selectedMethodRef = useRef<PaymentMethod | undefined>();
-    // TODO: CHECKOUT-10199 remove this temporary fix
-    const suppressMethodRemovedErrorUntilRef = useRef(0);
     const validationSchemasRef = useRef<validationSchemas>({});
     const lastFormValuesRef = useRef<PaymentFormValues | null>(null);
     // Set by the enhancedThemeV1 billing form. Awaited before submitOrder so the order
     // can't finalize before the entered billing address is validated and saved.
     const ensureBillingAddressSavedRef: MutableRefObject<EnsureBillingAddressSaved | null> =
         useRef(null);
+
+    const { checkoutState: initialCheckoutState } = useCheckout(() => undefined);
 
     const {
         orderConfirmation: { persistB2BMetadata, invoiceRedirect },
@@ -348,7 +372,7 @@ const Payment = (
             errorType === 'provider_fatal_error' ||
             errorType === 'order_could_not_be_finalized_error'
         ) {
-            window.location.replace(cartUrl || '/');
+            replaceLocation(cartUrl || '/');
         }
 
         if (errorType === 'tax_provider_unavailable') {
@@ -363,7 +387,7 @@ const Payment = (
             const { body, headers, status } = error;
 
             if (body.type === 'provider_error' && headers.location) {
-                window.top?.location.assign(headers.location);
+                assignTopLocation(headers.location);
             }
 
             // Reload the checkout object to get the latest `shouldExecuteSpamCheck` value,
@@ -401,13 +425,6 @@ const Payment = (
         const { type } = error as any;
 
         if (type === 'unexpected_detachment') {
-            errorLogger.log(error);
-
-            return;
-        }
-
-        // TODO: CHECKOUT-10199 remove this temporary fix
-        if (type === 'missing_data' && Date.now() < suppressMethodRemovedErrorUntilRef.current) {
             errorLogger.log(error);
 
             return;
@@ -464,7 +481,6 @@ const Payment = (
         async (values: PaymentFormValues) => {
             const {
                 defaultMethod,
-                loadPaymentMethods,
                 checkoutServiceSubscribe,
                 isPaymentDataRequired,
                 onCartChangedError = noop,
@@ -550,7 +566,7 @@ const Payment = (
                 analyticsTracker.paymentRejected();
 
                 if (isErrorWithType(error) && error.type === 'payment_method_invalid') {
-                    return loadPaymentMethods();
+                    return loadPaymentMethodsOrThrow();
                 }
 
                 if (isCartChangedError(error)) {
@@ -579,22 +595,23 @@ const Payment = (
     const dismissMethodsRefreshAlert = useCallback(() => setMethodsRefreshAlert(undefined), []);
 
     const setSelectedMethod = useCallback((method?: PaymentMethod): void => {
-        const { selectedMethod } = state;
-
-        if (selectedMethod === method) {
-            return;
-        }
-
-        if (method) {
-            trackSelectedPaymentMethod(method);
-        }
-
-        setState((prevState) => ({ ...prevState, selectedMethod: method }));
+        setState((prevState) =>
+            prevState.selectedMethod === method
+                ? prevState
+                : { ...prevState, selectedMethod: method },
+        );
     }, []);
 
     const handleMethodSelect = useCallback(
         (method: PaymentMethod): void => {
-            dismissMethodsRefreshAlert();
+            const currentMethod = selectedMethodRef.current;
+            // The fallback echoes back here as a reselection; it must not dismiss the alert.
+            const isReselection = !!currentMethod && isSamePaymentMethod(currentMethod, method);
+
+            if (!isReselection) {
+                dismissMethodsRefreshAlert();
+            }
+
             setSelectedMethod(method);
         },
         [dismissMethodsRefreshAlert, setSelectedMethod],
@@ -645,10 +662,6 @@ const Payment = (
     }): Promise<void> => {
         const { loadPaymentMethods, onUnhandledError = noop } = props;
 
-        if (billingCountryChange) {
-            suppressMethodRemovedErrorUntilRef.current = Date.now() + 5000;
-        }
-
         try {
             const updatedState = await loadPaymentMethods();
             const checkout = updatedState.data.getCheckout();
@@ -665,12 +678,6 @@ const Payment = (
                           capabilities: props.capabilities,
                       })
                     : undefined;
-            const defaultMethod = filteredMethodsWithDefault?.defaultMethod;
-            const selectedMethod = selectedMethodRef.current || defaultMethod;
-
-            if (selectedMethod) {
-                trackSelectedPaymentMethod(selectedMethod);
-            }
 
             if (billingCountryChange) {
                 const refreshAlert = getPaymentMethodsRefreshAlert({
@@ -680,17 +687,9 @@ const Payment = (
                     refreshedMethods: filteredMethodsWithDefault?.filteredMethods ?? [],
                 });
 
-                if (!refreshAlert.removedMethodName) {
-                    suppressMethodRemovedErrorUntilRef.current = 0;
-                }
-
                 setMethodsRefreshAlert(refreshAlert);
             }
         } catch (error) {
-            if (billingCountryChange) {
-                suppressMethodRemovedErrorUntilRef.current = 0;
-            }
-
             onUnhandledError(error);
         }
     };
@@ -728,6 +727,29 @@ const Payment = (
     useEffect(() => {
         selectedMethodRef.current = state.selectedMethod || props.defaultMethod;
     }, [state.selectedMethod, props.defaultMethod]);
+
+    // The only analytics emitter for method selection.
+    const effectiveSelectedMethod = state.selectedMethod || props.defaultMethod;
+    const trackedSelectedMethodId = effectiveSelectedMethod
+        ? getUniquePaymentMethodId(effectiveSelectedMethod.id, effectiveSelectedMethod.gateway)
+        : undefined;
+
+    useEffect(() => {
+        if (effectiveSelectedMethod) {
+            trackSelectedPaymentMethod(effectiveSelectedMethod);
+        }
+    }, [trackedSelectedMethodId]);
+
+    useFallbackWhenMethodRemoved(
+        props.methods,
+        state.selectedMethod
+            ? getUniquePaymentMethodId(state.selectedMethod.id, state.selectedMethod.gateway)
+            : undefined,
+        props.defaultMethod
+            ? getUniquePaymentMethodId(props.defaultMethod.id, props.defaultMethod.gateway)
+            : undefined,
+        () => setSelectedMethod(props.defaultMethod),
+    );
 
     useEffect(() => {
         const init = async () => {
@@ -803,6 +825,11 @@ const Payment = (
                 }
             }
 
+            const isHandleUnsuccessful3dsCheckExperimentOn =
+                isGooglePayHandleUnsuccessful3dsCheckExperimentOn(
+                    initialCheckoutState.data.getConfig()?.checkoutSettings,
+                );
+
             try {
                 const state = await finalizeOrderIfNeeded({
                     integrations: [
@@ -815,6 +842,22 @@ const Payment = (
                         createCheckoutComIdealPaymentStrategy,
                         createCheckoutComSepaPaymentStrategy,
                         createClearpayPaymentStrategy,
+                        ...(isHandleUnsuccessful3dsCheckExperimentOn
+                            ? [
+                                  createGooglePayAdyenV2PaymentStrategy,
+                                  createGooglePayAdyenV3PaymentStrategy,
+                                  createGooglePayAuthorizeNetPaymentStrategy,
+                                  createGooglePayBigCommercePaymentsPaymentStrategy,
+                                  createGooglePayBraintreePaymentStrategy,
+                                  createGooglePayCheckoutComPaymentStrategy,
+                                  createGooglePayCybersourcePaymentStrategy,
+                                  createGooglePayOrbitalPaymentStrategy,
+                                  createGooglePayPPCPPaymentStrategy,
+                                  createGooglePayStripePaymentStrategy,
+                                  createGooglePayTdOnlineMartPaymentStrategy,
+                                  createGooglePayWorldpayAccessPaymentStrategy,
+                              ]
+                            : []),
                         createOffsitePaymentStrategy,
                         createPaypalExpressPaymentStrategy,
                         createSagePayPaymentStrategy,
@@ -907,11 +950,14 @@ const Payment = (
             props.isUpdatingBillingAddress ||
             props.isUpdatingCheckout);
     const isReloadingPaymentMethods = enhancedThemeV1 && props.isLoadingPaymentMethods;
+    const isPlacingOrder = enhancedThemeV1 && props.isSubmittingOrder;
 
     return (
         <PaymentContext.Provider value={getContextValue()}>
             <ChecklistSkeleton isLoading={!state.isReady}>
-                <LoadingOverlay isLoading={isBillingFormBusy || isReloadingPaymentMethods}>
+                <LoadingOverlay
+                    isLoading={isBillingFormBusy || isReloadingPaymentMethods || isPlacingOrder}
+                >
                     <PaymentForm
                         additionalField={props.capabilities.payment.additionalField}
                         availableStoreCredit={props.availableStoreCredit}

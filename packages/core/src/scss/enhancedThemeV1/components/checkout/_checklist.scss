@@ -65,19 +65,22 @@
         }
 
         &:focus ~ .form-label {
-            box-shadow: $checklist-focus-boxShadow;
+            box-shadow: none;
         }
 
         & ~ .form-label::before {
             border: 2px $input-border-style $input-border-color;
         }
-    }
-}
 
+        // payments radio buttons should look non-interactive while initializing
+        &:disabled ~ .form-label,
+        &[aria-disabled="true"] ~ .form-label {
+            cursor: not-allowed;
 
-// Payment provider title
-.paymentProviderHeader-container {
-    @include enhancedThemeV1 {
-        flex: 1;
+            &::before,
+            &::after {
+                opacity: $checkRadio-disabled-opacity;
+            }
+        }
     }
 }

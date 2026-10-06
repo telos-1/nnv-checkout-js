@@ -10,7 +10,6 @@ import { type ErrorLogger } from '@bigcommerce/checkout/error-handling-utils';
 import { OrderConfirmationPageSkeleton } from '@bigcommerce/checkout/ui';
 import {
     CannotCreatePersonalAccountSessionStorage,
-    isExperimentEnabled,
     toStorefrontUrl,
 } from '@bigcommerce/checkout/utility';
 
@@ -164,7 +163,6 @@ export const OrderConfirmation = ({
 
     const paymentInstructions = getPaymentInstructions(order);
     const {
-        checkoutSettings,
         currency,
         shopperConfig,
         shopperCurrency,
@@ -173,10 +171,6 @@ export const OrderConfirmation = ({
     } = config;
     const shouldShowPasswordForm = order.customerCanBeCreated;
     const customerCanBeCreated = !order.customerId;
-    const isShippingDiscountDisplayEnabled = isExperimentEnabled(
-        checkoutSettings,
-        'PROJECT-6643.enable_shipping_discounts_in_orders',
-    );
 
     return (
         <OrderConfirmationPage
@@ -185,7 +179,6 @@ export const OrderConfirmation = ({
             customerCanBeCreated={customerCanBeCreated}
             error={error}
             hasSignedUp={hasSignedUp}
-            isShippingDiscountDisplayEnabled={isShippingDiscountDisplayEnabled}
             isSigningUp={isSigningUp}
             onErrorModalClose={handleErrorModalClose}
             onSignUp={handleSignUp}

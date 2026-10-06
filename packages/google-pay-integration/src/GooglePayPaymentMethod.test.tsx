@@ -3,6 +3,7 @@ import {
     type CheckoutSelectors,
     type CheckoutService,
     createCheckoutService,
+    type HostedInstrument,
     type PaymentInitializeOptions,
     type PaymentMethod,
 } from '@bigcommerce/checkout-sdk';
@@ -43,6 +44,7 @@ import {
     getAddress,
     getCheckout,
     getCheckoutPayment,
+    getCustomer,
     getPaymentFormServiceMock,
     getPaymentMethod,
     getStoreConfig,
@@ -65,28 +67,6 @@ describe('when using Google Pay payment', () => {
         id: '1113412341',
     };
     const onUnhandledError = jest.fn();
-
-    const storeConfigWithDirectPayDisabled = {
-        ...getStoreConfig(),
-        checkoutSettings: {
-            ...getStoreConfig().checkoutSettings,
-            features: {
-                ...getStoreConfig().checkoutSettings.features,
-                'PI-5111.google_pay_direct_pay_on_click': false,
-            },
-        },
-    };
-
-    const storeConfigWithDirectPayEnabled = {
-        ...getStoreConfig(),
-        checkoutSettings: {
-            ...getStoreConfig().checkoutSettings,
-            features: {
-                ...getStoreConfig().checkoutSettings.features,
-                'PI-5111.google_pay_direct_pay_on_click': true,
-            },
-        },
-    };
 
     beforeEach(() => {
         checkoutService = createCheckoutService();
@@ -111,9 +91,7 @@ describe('when using Google Pay payment', () => {
             language: localeContext.language,
         };
 
-        jest.spyOn(checkoutState.data, 'getConfig').mockReturnValue(
-            storeConfigWithDirectPayDisabled,
-        );
+        jest.spyOn(checkoutState.data, 'getConfig').mockReturnValue(getStoreConfig());
 
         jest.spyOn(checkoutService, 'deinitializePayment').mockResolvedValue(checkoutState);
 
@@ -132,7 +110,63 @@ describe('when using Google Pay payment', () => {
         );
     });
 
-    describe('when Direct Pay is disabled', () => {
+    describe('when payment is already selected at mount (wallet button flow)', () => {
+        beforeEach(() => {
+            // The wallet button branch only renders when Google Pay was already
+            // selected at mount time, so reflect the current method id in checkout.
+            jest.spyOn(checkoutState.data, 'getCheckout').mockImplementation(() => ({
+                ...getCheckout(),
+                payments: [{ ...getCheckoutPayment(), providerId: method.id }],
+            }));
+        });
+
+        describe('save payment method checkbox', () => {
+            const SAVE_LABEL = 'Save this card for future transactions';
+
+            beforeEach(() => {
+                method.id = PaymentMethodId.StripeOCSGooglePay;
+                method.config = { ...method.config, isVaultingEnabled: true };
+                jest.spyOn(checkoutState.data, 'getCustomer').mockReturnValue(getCustomer());
+            });
+
+            it('renders the vaulting fields below the payment details', () => {
+                const { container } = render(
+                    <GooglePayPaymentMethodTest {...defaultProps} method={method} />,
+                );
+
+                // querySelectorAll returns nodes in document order
+                const sections = Array.from(
+                    container.querySelectorAll(
+                        '.paymentMethod--walletButton, .form-fieldset--storedInstrument',
+                    ),
+                );
+
+                expect(sections).toHaveLength(2);
+                expect(sections[0]).toHaveClass('paymentMethod--walletButton');
+                expect(sections[1]).toHaveClass('form-fieldset--storedInstrument');
+            });
+
+            it('renders the checkbox for a Stripe provider', () => {
+                render(<GooglePayPaymentMethodTest {...defaultProps} method={method} />);
+
+                expect(screen.getByLabelText(SAVE_LABEL)).toBeInTheDocument();
+            });
+
+            it('reports the shopper choice to the SDK when the shopper swaps cards', () => {
+                (paymentForm.getFieldValue as jest.Mock).mockReturnValue(true);
+
+                render(<GooglePayPaymentMethodTest {...defaultProps} method={method} />);
+
+                const initializeOptions = (checkoutService.initializePayment as jest.Mock).mock
+                    .calls[0][0] as Record<string, { getFieldsValues(): HostedInstrument }>;
+
+                expect(
+                    initializeOptions[PaymentMethodId.StripeOCSGooglePay].getFieldsValues(),
+                ).toEqual({ shouldSaveInstrument: true });
+                expect(paymentForm.getFieldValue).toHaveBeenCalledWith('shouldSaveInstrument');
+            });
+        });
+
         it('initializes payment method when component mounts', () => {
             render(<GooglePayPaymentMethodTest {...defaultProps} />);
 
@@ -161,7 +195,7 @@ describe('when using Google Pay payment', () => {
 
             expect(
                 screen.getByText(
-                    defaultProps.language.translate('remote.sign_in_action', {
+                    defaultProps.language.translate('remote.sign_out_action', {
                         providerName: getPaymentMethodName(defaultProps.language)(
                             defaultProps.method,
                         ),
@@ -293,13 +327,7 @@ describe('when using Google Pay payment', () => {
         });
     });
 
-    describe('when Direct Pay is enabled', () => {
-        beforeEach(() => {
-            jest.spyOn(checkoutState.data, 'getConfig').mockReturnValue(
-                storeConfigWithDirectPayEnabled,
-            );
-        });
-
+    describe('when payment is not selected at mount (Direct Pay flow)', () => {
         it('does not render the wallet button', () => {
             render(<GooglePayPaymentMethodTest {...defaultProps} />);
 
@@ -356,11 +384,7 @@ describe('when using Google Pay payment', () => {
             });
         });
 
-        it('renders the wallet UI with a sign-out option regardless of the feature flag', () => {
-            jest.spyOn(checkoutState.data, 'getConfig').mockReturnValue(
-                storeConfigWithDirectPayEnabled,
-            );
-
+        it('renders the wallet UI with a sign-out option', () => {
             render(<GooglePayPaymentMethodTest {...defaultProps} />);
 
             expect(

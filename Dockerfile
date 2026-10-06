@@ -3,7 +3,7 @@
 ###############################################################################
 # Stage: build — compile the checkout bundle into /app/dist
 ###############################################################################
-FROM node:22.13.0-bookworm AS build
+FROM node:24.19.0-bookworm AS build
 
 ENV NX_DAEMON=false \
     NODE_OPTIONS=--max-old-space-size=4096
@@ -32,7 +32,7 @@ RUN git init -q . \
 #   docker build --target dev -t checkout-js:dev .
 #   docker run --rm -p 8080:8080 -v "$PWD":/app -v /app/node_modules checkout-js:dev
 ###############################################################################
-FROM node:22.13.0-bookworm AS dev
+FROM node:24.19.0-bookworm AS dev
 
 ENV NX_DAEMON=false \
     NODE_OPTIONS=--max-old-space-size=4096

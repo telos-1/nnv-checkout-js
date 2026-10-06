@@ -1,11 +1,16 @@
 name: Build and publish image
 
+# Branches:
+#   main  development — every push publishes the `dev` image.
+#   prod  production  — every push publishes the `prod` and `latest` images.
+#
+# Changes land on main first and are promoted by merging main into prod.
 on:
   push:
-    branches: [master]
+    branches: [main, prod]
     tags: ['v*']
   pull_request:
-    branches: [master]
+    branches: [main, prod]
   workflow_dispatch:
 
 env:
@@ -13,7 +18,7 @@ env:
   IMAGE_NAME: ghcr.io/telos-1/nnv-checkout
 
 # A newer push supersedes an in-flight build of the same ref, except on
-# master/tags where every publish should complete.
+# main/prod/tags where every publish should complete.
 concurrency:
   group: docker-publish-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -54,7 +59,8 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=sha,format=long
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=dev,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/prod' }}
 
       - name: Build and push
         uses: docker/build-push-action@v6
